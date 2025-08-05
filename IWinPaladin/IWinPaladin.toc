@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: IWinPaladin
+## Notes: Smart macros for turtle paladins
+## Version: 1.1
+## SavedVariables: 
+## OptionalDeps: ShaguTweaks, pfUI
+
+IWinPaladin.lua
