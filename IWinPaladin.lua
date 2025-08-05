@@ -482,9 +482,9 @@ function SlashCmdList.ICHASE()
 	IWin:StartAttack()
 end
 
----- ikick button ----
-SLASH_IKICK1 = '/ikick'
-function SlashCmdList.IKICK()
+---- istun button ----
+SLASH_ISTUN1 = '/istun'
+function SlashCmdList.ISTUN()
 	IWin:TargetEnemy()
 	IWin:HammerOfJustice()
 	IWin:Repentance()
