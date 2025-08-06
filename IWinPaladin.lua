@@ -127,11 +127,11 @@ function IWin:GetBuffRemaining(unit, spell)
 	if unit == "player" then
 		local index = IWin:GetBuffIndex(unit, spell)
 		if index then
-			return GetPlayerBuffTimeLeft(index - 1)
+			return GetPlayerBuffTimeLeft(index - 2)
 		end
 		local index = IWin:GetDebuffIndex(unit, spell)
 		if index then
-			return GetPlayerBuffTimeLeft(index - 1)
+			return GetPlayerBuffTimeLeft(index - 2)
 		end
 	elseif unit == "target" then
 		local libdebuff = pfUI and pfUI.api and pfUI.api.libdebuff or ShaguTweaks and ShaguTweaks.libdebuff
@@ -184,11 +184,12 @@ function IWin:IsSpellLearnt(spell)
 end
 
 function IWin:IsGCDActive()
-	return GetTime() - IWin_CombatVar["gcd"] < 1.4
+	return GetTime() - IWin_CombatVar["gcd"] < 1.5
 end
 
 function IWin:IsStanceActive(stance)
-	for index = 1, 6 do
+	local forms = GetNumShapeshiftForms()
+	for index = 1, forms do
 		local _, name, active = GetShapeshiftFormInfo(index)
 		if name == stance then
 			return active == 1
@@ -332,25 +333,31 @@ function IWin:BlessingOfWisdom()
 end
 
 function IWin:Consecration()
-	if IWin:IsSpellLearnt("Consecration") then
+	if IWin:IsSpellLearnt("Consecration") and not IWin:IsOnCooldown("Consecration") then
 		Cast("Consecration")
 	end
 end
 
+function IWin:CrusaderStrike()
+	if IWin:IsSpellLearnt("Crusader Strike") and not IWin:IsOnCooldown("Crusader Strike") and IWin:GetBuffRemaining("player","Zeal") < 13 then
+		Cast("Crusader Strike")
+	end
+end
+
 function IWin:Exorcism()
-	if IWin:IsSpellLearnt("Exorcism") and (UnitCreatureType("target") == "undead" or UnitCreatureType("target") == "demon") then
+	if IWin:IsSpellLearnt("Exorcism") and not IWin:IsOnCooldown("Exorcism") and (UnitCreatureType("target") == "undead" or UnitCreatureType("target") == "demon") then
 		Cast("Exorcism")
 	end
 end
 
 function IWin:ExorcismRanged()
-	if IWin:IsSpellLearnt("Exorcism") and (UnitCreatureType("target") == "undead" or UnitCreatureType("target") == "demon") and not IWin:IsInMeleeRange() then
+	if IWin:IsSpellLearnt("Exorcism") and not IWin:IsOnCooldown("Exorcism") and (UnitCreatureType("target") == "undead" or UnitCreatureType("target") == "demon") and not IWin:IsInMeleeRange() then
 		Cast("Exorcism")
 	end
 end
 
 function IWin:HammerOfJustice()
-	if IWin:IsSpellLearnt("Hammer of Justice") then
+	if IWin:IsSpellLearnt("Hammer of Justice") and not IWin:IsOnCooldown("Hammer of Justice") then
 		Cast("Hammer of Justice")
 	end
 end
@@ -362,43 +369,43 @@ function IWin:HandOfReckoning()
 end
 
 function IWin:HolyShield()
-	if IWin:IsSpellLearnt("Holy Shield") and (not UnitAffectingCombat("target") or IWin:IsTanking()) then
+	if IWin:IsSpellLearnt("Holy Shield") and not IWin:IsOnCooldown("Holy Shield") and IWin:IsShieldEquipped() and (not UnitAffectingCombat("target") or IWin:IsTanking()) then
 		Cast("Holy Shield")
 	end
 end
 
 function IWin:HolyStrike()
-	if IWin:IsSpellLearnt("Holy Strike") then
+	if IWin:IsSpellLearnt("Holy Strike") and not IWin:IsOnCooldown("Holy Strike") then
 		Cast("Holy Strike")
 	end
 end
 
 function IWin:HolyWrath()
-	if IWin:IsSpellLearnt("Holy Wrath") and not IWin:IsTanking() and (UnitCreatureType("target") == "undead" or UnitCreatureType("target") == "demon") then
+	if IWin:IsSpellLearnt("Holy Wrath") and not IWin:IsOnCooldown("Holy Wrath") and not IWin:IsTanking() and (UnitCreatureType("target") == "undead" or UnitCreatureType("target") == "demon") then
 		Cast("Holy Wrath")
 	end
 end
 
 function IWin:Judgement()
-	if IWin:IsSpellLearnt("Judgement") and IWin:IsSealActive() and not IWin:IsJudgementOverwrite() and not IWin:IsGCDActive() then
+	if IWin:IsSpellLearnt("Judgement") and not IWin:IsOnCooldown("Judgement") and IWin:IsSealActive() and not IWin:IsJudgementOverwrite() and not IWin:IsGCDActive() then
 		Cast("Judgement")
 	end
 end
 
 function IWin:JudgementRanged()
-	if IWin:IsSpellLearnt("Judgement") and IWin:IsSealActive() and not IWin:IsJudgementOverwrite() and not IWin:IsGCDActive() and not IWin:IsInMeleeRange() then
+	if IWin:IsSpellLearnt("Judgement") and not IWin:IsOnCooldown("Judgement") and IWin:IsSealActive() and not IWin:IsJudgementOverwrite() and not IWin:IsGCDActive() and not IWin:IsInMeleeRange() then
 		Cast("Judgement")
 	end
 end
 
 function IWin:Repentance()
-	if IWin:IsSpellLearnt("Repentance") then
+	if IWin:IsSpellLearnt("Repentance") and not IWin:IsOnCooldown("Repentance") then
 		Cast("Repentance")
 	end
 end
 
 function IWin:SealofRighteousness()
-	if IWin:IsSpellLearnt("Seal of Righteousness") and not IWin:IsSealActive() then 
+	if IWin:IsSpellLearnt("Seal of Righteousness") and (not IWin:IsSealActive() or IWin:GetManaPercent("player") > 95) then 
 		Cast("Seal of Righteousness")
 	end
 end
@@ -410,7 +417,7 @@ function IWin:SealofWisdom()
 end
 
 function IWin:SealofWisdomLowMana()
-	if IWin:IsSpellLearnt("Seal of Wisdom") and not IWin:IsSealActive() and IWin:GetManaPercent("player") < 30 then 
+	if IWin:IsSpellLearnt("Seal of Wisdom") and not IWin:IsSealActive() and IWin:GetManaPercent("player") < 40 then 
 		Cast("Seal of Wisdom")
 	end
 end
@@ -418,8 +425,8 @@ end
 ---- idebug button ----
 SLASH_IDEBUG1 = '/idebug'
 function SlashCmdList.IDEBUG()
-	--DEFAULT_CHAT_FRAME:AddMessage()
-	IWin:IsTaunted()
+	DEFAULT_CHAT_FRAME:AddMessage(IWin:GetBuffRemaining("player","Zeal"))
+	
 end
 
 ---- idps button ----
@@ -434,6 +441,7 @@ function SlashCmdList.IDPS()
 	IWin:SealofRighteousness()
 	IWin:ExorcismRanged()
 	IWin:JudgementRanged()
+	IWin:CrusaderStrike()
 	IWin:HolyStrike()
 	IWin:Exorcism()
 	IWin:Judgement()
@@ -444,6 +452,7 @@ end
 SLASH_ICLEAVE1 = '/icleave'
 function SlashCmdList.ICLEAVE()
 	IWin:TargetEnemy()
+	IWin:MarkSkull()
 	IWin:BlessingOfSanctuary()
 	IWin:BlessingOfKings()
 	IWin:BlessingOfWisdom()
@@ -453,6 +462,7 @@ function SlashCmdList.ICLEAVE()
 	IWin:SealofWisdom()
 	IWin:HolyWrath()
 	IWin:JudgementRanged()
+	IWin:CrusaderStrike()
 	IWin:HolyStrike()
 	IWin:Judgement()
 	IWin:StartAttack()
