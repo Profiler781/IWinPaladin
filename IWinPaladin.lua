@@ -505,10 +505,13 @@ function IWin:SealOfWisdom()
 	end
 end
 
-function IWin:SealOfWisdomLowMana()
+function IWin:SealOfWisdomMana()
 	if IWin:IsSpellLearnt("Seal of Wisdom")
 		and not IWin:IsSealActive()
-		and IWin:GetManaPercent("player") < 40 then 
+		and (
+				IWin:GetManaPercent("player") < 40
+				or not UnitAffectingCombat("player")
+			) then 
 			Cast("Seal of Wisdom")
 	end
 end
@@ -538,9 +541,10 @@ function SlashCmdList.IDPS()
 	IWin:BlessingOfKings()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfPower()
-	IWin:SealOfWisdomLowMana()
+	IWin:SealOfWisdomMana()
 	IWin:SealOfWisdomElite()
 	--IWin:SealOfLightWorldboss()
+	IWin:SealOfCommand()
 	IWin:SealOfRighteousness()
 	IWin:ExorcismRanged()
 	IWin:JudgementRanged()
