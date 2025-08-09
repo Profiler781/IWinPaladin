@@ -10,57 +10,25 @@ if UnitClass("player") ~= "Paladin" then return end
 ---- Loading ----
 IWin = CreateFrame("frame",nil,UIParent)
 IWin.t = CreateFrame("GameTooltip", "IWin_T", UIParent, "GameTooltipTemplate")
-local IWin_Settings = {
-
-}
+--local IWin_Settings = {}
 local IWin_CombatVar = {
 	["gcd"] = 0,
 }
 local Cast = CastSpellByName
 
 ---- Event Register ----
-IWin:RegisterEvent("CHAT_MSG_COMBAT_SELF_MISSES")
-IWin:RegisterEvent("CHAT_MSG_SPELL_DAMAGESHIELDS_ON_SELF")
 IWin:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN")
 IWin:RegisterEvent("ADDON_LOADED")
 IWin:SetScript("OnEvent", function()
 	if event == "ADDON_LOADED" and arg1 == "IWinPaladin" then
 		DEFAULT_CHAT_FRAME:AddMessage("|cff0066ff IWinPaladin system loaded.|r")
 		IWin:UnregisterEvent("ADDON_LOADED")
-	elseif event == "CHAT_MSG_COMBAT_SELF_MISSES" or event == "CHAT_MSG_SPELL_DAMAGESHIELDS_ON_SELF" then
-		if string.find(arg1,"dodge") then
-			IWin_CombatVar["dodge"] = GetTime()
-		end
 	elseif event == "ACTIONBAR_UPDATE_COOLDOWN" and arg1 == nil then
 		IWin_CombatVar["gcd"] = GetTime()
 	end
 end)
 
 ---- Spell data ----
-IWin_ManaCost = { --TODO
-	["Exorcism"] = 345,
-	["Holy Wrath"] = 805,
-	["Hammer of Wrath"] = 425,
-	["Holy Light"] = 660,
-	["Consecration"] = 505,
-	["Holy Strike"] = 90 - 90,
-	["Conviction"] = 285,
-	["Flash of Light"] = 180,
-	["Seal of Righteousness"] = 180,
-	["Seal of Light"] = 210,
-	["Crusader Strike"] = 120,
-	["Seal of Wisdom"] = 200,
-	["Hammer of Justice"] = 100,
-	["Seal of the Crusader"] = 160,
-	["Repentance"] = 60,
-	["Cleanse"] = 42,
-	["Purify"] = 78,
-	["Seal of Justice"] = 160,
-	["Hand of Freedom"] = 120,
-	["Hand of Reckoning"] = 0,
-	["Judgement"] = 0,
-}
-
 IWin_Taunt = {
 	"Taunt",
 	"Mocking Blow",
@@ -278,6 +246,7 @@ end
 function IWin:IsJudgementOverwrite()
 	return IWin:IsJudgementActive()
 		and not IWin:IsBuffActive("player","Seal of Righteousness")
+		and not IWin:IsBuffActive("player","Seal of Command")
 end
 
 function IWin:IsBlessingActive()
@@ -297,128 +266,259 @@ function IWin:TargetEnemy()
 end
 
 function IWin:StartAttack()
-	if not PlayerFrame.inCombat then
+	local attackActionFound = false
+	for action = 1, 172 do
+		if IsAttackAction(action) then
+			attackActionFound = true
+			if not IsCurrentAction(action) then
+				UseAction(action)
+			end
+		end
+	end
+	if not attackActionFound and not PlayerFrame.inCombat then
 		AttackTarget()
 	end
 end
 
 function IWin:MarkSkull()
-	if GetRaidTargetIndex("target") ~= 8 and not UnitIsFriend("player", "target") and not UnitInRaid("player") then
-		SetRaidTarget("target", 8)
+	if GetRaidTargetIndex("target") ~= 8
+		and not UnitIsFriend("player", "target")
+		and not UnitInRaid("player") then
+			SetRaidTarget("target", 8)
 	end
 end
 
 function IWin:BlessingOfKings()
-	if IWin:IsSpellLearnt("Blessing of Kings") and not IWin:IsBuffActive("player","Blessing of Kings") then
-		Cast("Blessing of Kings")
+	if IWin:IsSpellLearnt("Blessing of Kings")
+		and not IWin:IsBuffActive("player","Blessing of Kings") then
+			Cast("Blessing of Kings")
 	end
 end
 
 function IWin:BlessingOfPower()
-	if IWin:IsSpellLearnt("Blessing of Power") and not IWin:IsBlessingActive() then
-		Cast("Blessing of Power")
+	if IWin:IsSpellLearnt("Blessing of Power")
+		and not IWin:IsBlessingActive() then
+			Cast("Blessing of Power")
 	end
 end
 
 function IWin:BlessingOfSanctuary()
-	if IWin:IsSpellLearnt("Blessing of Sanctuary") and not IWin:IsBuffActive("player","Blessing of Sanctuary") then
-		Cast("Blessing of Sanctuary")
+	if IWin:IsSpellLearnt("Blessing of Sanctuary")
+		and not IWin:IsBuffActive("player","Blessing of Sanctuary") then
+			Cast("Blessing of Sanctuary")
 	end
 end
 
 function IWin:BlessingOfWisdom()
-	if IWin:IsSpellLearnt("Blessing of Wisdom") and not IWin:IsBlessingActive() then
-		Cast("Blessing of Wisdom")
+	if IWin:IsSpellLearnt("Blessing of Wisdom")
+		and not IWin:IsBlessingActive() then
+			Cast("Blessing of Wisdom")
+	end
+end
+
+function IWin:Cleanse()
+	if IWin:IsSpellLearnt("Cleanse")
+		and not IWin:IsOnCooldown("Cleanse")
+		and not HasFullControl() then
+			Cast("Cleanse")
 	end
 end
 
 function IWin:Consecration()
-	if IWin:IsSpellLearnt("Consecration") and not IWin:IsOnCooldown("Consecration") then
-		Cast("Consecration")
+	if IWin:IsSpellLearnt("Consecration")
+		and not IWin:IsOnCooldown("Consecration") then
+			Cast("Consecration")
 	end
 end
 
 function IWin:CrusaderStrike()
-	if IWin:IsSpellLearnt("Crusader Strike") and not IWin:IsOnCooldown("Crusader Strike") and IWin:GetBuffRemaining("player","Zeal") < 13 then
-		Cast("Crusader Strike")
+	if IWin:IsSpellLearnt("Crusader Strike")
+		and not IWin:IsOnCooldown("Crusader Strike")
+		and IWin:GetBuffRemaining("player","Zeal") < 13 then
+			Cast("Crusader Strike")
 	end
 end
 
 function IWin:Exorcism()
-	if IWin:IsSpellLearnt("Exorcism") and not IWin:IsOnCooldown("Exorcism") and (UnitCreatureType("target") == "undead" or UnitCreatureType("target") == "demon") then
-		Cast("Exorcism")
+	if IWin:IsSpellLearnt("Exorcism")
+		and not IWin:IsOnCooldown("Exorcism")
+		and (
+				UnitCreatureType("target") == "undead"
+				or UnitCreatureType("target") == "demon"
+			) then
+			Cast("Exorcism")
 	end
 end
 
 function IWin:ExorcismRanged()
-	if IWin:IsSpellLearnt("Exorcism") and not IWin:IsOnCooldown("Exorcism") and (UnitCreatureType("target") == "undead" or UnitCreatureType("target") == "demon") and not IWin:IsInMeleeRange() then
-		Cast("Exorcism")
+	if IWin:IsSpellLearnt("Exorcism")
+		and not IWin:IsOnCooldown("Exorcism")
+		and (
+				UnitCreatureType("target") == "undead"
+				or UnitCreatureType("target") == "demon"
+			)
+		and not IWin:IsInMeleeRange() then
+			Cast("Exorcism")
 	end
 end
 
 function IWin:HammerOfJustice()
-	if IWin:IsSpellLearnt("Hammer of Justice") and not IWin:IsOnCooldown("Hammer of Justice") then
-		Cast("Hammer of Justice")
+	if IWin:IsSpellLearnt("Hammer of Justice")
+		and not IWin:IsOnCooldown("Hammer of Justice") then
+			Cast("Hammer of Justice")
+	end
+end
+
+function IWin:HandOfFreedom()
+	if IWin:IsSpellLearnt("Hand of Freedom")
+		and not IWin:IsOnCooldown("Hand of Freedom")
+		and not HasFullControl() then
+			Cast("Hand of Freedom")
 	end
 end
 
 function IWin:HandOfReckoning()
-	if IWin:IsSpellLearnt("Hand of Reckoning") and not IWin:IsTanking() and not IWin:IsOnCooldown("Hand of Reckoning") and not IWin:IsTaunted() then
-		Cast("Hand of Reckoning")
+	if IWin:IsSpellLearnt("Hand of Reckoning")
+		and not IWin:IsTanking()
+		and not IWin:IsOnCooldown("Hand of Reckoning")
+		and not IWin:IsTaunted() then
+			Cast("Hand of Reckoning")
 	end
 end
 
 function IWin:HolyShield()
-	if IWin:IsSpellLearnt("Holy Shield") and not IWin:IsOnCooldown("Holy Shield") and IWin:IsShieldEquipped() and (not UnitAffectingCombat("target") or IWin:IsTanking()) then
-		Cast("Holy Shield")
+	if IWin:IsSpellLearnt("Holy Shield")
+		and not IWin:IsOnCooldown("Holy Shield")
+		and IWin:IsShieldEquipped()
+		and (
+				not UnitAffectingCombat("target")
+				or IWin:IsTanking()
+			) then
+			Cast("Holy Shield")
 	end
 end
 
 function IWin:HolyStrike()
-	if IWin:IsSpellLearnt("Holy Strike") and not IWin:IsOnCooldown("Holy Strike") then
-		Cast("Holy Strike")
+	if IWin:IsSpellLearnt("Holy Strike")
+		and not IWin:IsOnCooldown("Holy Strike") then
+			Cast("Holy Strike")
 	end
 end
 
 function IWin:HolyWrath()
-	if IWin:IsSpellLearnt("Holy Wrath") and not IWin:IsOnCooldown("Holy Wrath") and not IWin:IsTanking() and (UnitCreatureType("target") == "undead" or UnitCreatureType("target") == "demon") then
-		Cast("Holy Wrath")
+	if IWin:IsSpellLearnt("Holy Wrath")
+		and not IWin:IsOnCooldown("Holy Wrath")
+		and not IWin:IsTanking()
+		and (
+				UnitCreatureType("target") == "undead"
+				or UnitCreatureType("target") == "demon"
+			) then
+			Cast("Holy Wrath")
 	end
 end
 
 function IWin:Judgement()
-	if IWin:IsSpellLearnt("Judgement") and not IWin:IsOnCooldown("Judgement") and IWin:IsSealActive() and not IWin:IsJudgementOverwrite() and not IWin:IsGCDActive() then
-		Cast("Judgement")
+	if IWin:IsSpellLearnt("Judgement")
+		and not IWin:IsOnCooldown("Judgement")
+		and IWin:IsSealActive()
+		and not IWin:IsJudgementOverwrite()
+		and not IWin:IsGCDActive() then
+			Cast("Judgement")
+	end
+end
+
+function IWin:JudgementReact()
+	if IWin:IsSpellLearnt("Judgement")
+		and not IWin:IsOnCooldown("Judgement")
+		and IWin:IsSealActive() then
+			Cast("Judgement")
 	end
 end
 
 function IWin:JudgementRanged()
-	if IWin:IsSpellLearnt("Judgement") and not IWin:IsOnCooldown("Judgement") and IWin:IsSealActive() and not IWin:IsJudgementOverwrite() and not IWin:IsGCDActive() and not IWin:IsInMeleeRange() then
-		Cast("Judgement")
+	if IWin:IsSpellLearnt("Judgement")
+		and not IWin:IsOnCooldown("Judgement")
+		and IWin:IsSealActive()
+		and not IWin:IsJudgementOverwrite()
+		and not IWin:IsGCDActive()
+		and not IWin:IsInMeleeRange() then
+			Cast("Judgement")
+	end
+end
+
+function IWin:Purify()
+	if IWin:IsSpellLearnt("Purify")
+		and not IWin:IsOnCooldown("Purify")
+		and not HasFullControl() then
+			Cast("Purify")
 	end
 end
 
 function IWin:Repentance()
-	if IWin:IsSpellLearnt("Repentance") and not IWin:IsOnCooldown("Repentance") then
-		Cast("Repentance")
+	if IWin:IsSpellLearnt("Repentance")
+		and not IWin:IsOnCooldown("Repentance") then
+			Cast("Repentance")
 	end
 end
 
-function IWin:SealofRighteousness()
-	if IWin:IsSpellLearnt("Seal of Righteousness") and (not IWin:IsSealActive() or IWin:GetManaPercent("player") > 95) then 
-		Cast("Seal of Righteousness")
+function IWin:SealOfCommand()
+	if IWin:IsSpellLearnt("Seal of Command")
+		and (
+				not IWin:IsSealActive()
+				or IWin:GetManaPercent("player") > 95
+			) then 
+			Cast("Seal of Command")
 	end
 end
 
-function IWin:SealofWisdom()
-	if IWin:IsSpellLearnt("Seal of Wisdom") and not IWin:IsBuffActive("player","Seal of Wisdom") then 
-		Cast("Seal of Wisdom")
+function IWin:SealOfJustice()
+	if IWin:IsSpellLearnt("Seal of Justice")
+		and not IWin:IsBuffActive("target", "Judgement of Justice")
+		and not IWin:IsBuffActive("player", "Seal of Justice") then 
+			Cast("Seal of Justice")
 	end
 end
 
-function IWin:SealofWisdomLowMana()
-	if IWin:IsSpellLearnt("Seal of Wisdom") and not IWin:IsSealActive() and IWin:GetManaPercent("player") < 40 then 
-		Cast("Seal of Wisdom")
+function IWin:SealOfLightWorldboss()
+	if IWin:IsSpellLearnt("Seal of Light")
+		and not IWin:IsSealActive()
+		and not IWin:IsBuffActive("target","Judgement of Light")
+		and UnitClassification("target") == "worldboss" then 
+			Cast("Seal of Light")
+	end
+end
+
+function IWin:SealOfRighteousness()
+	if IWin:IsSpellLearnt("Seal of Righteousness")
+		and (
+				not IWin:IsSealActive()
+				or IWin:GetManaPercent("player") > 95
+			) then 
+			Cast("Seal of Righteousness")
+	end
+end
+
+function IWin:SealOfWisdom()
+	if IWin:IsSpellLearnt("Seal of Wisdom")
+		and not IWin:IsBuffActive("player","Seal of Wisdom") then 
+			Cast("Seal of Wisdom")
+	end
+end
+
+function IWin:SealOfWisdomLowMana()
+	if IWin:IsSpellLearnt("Seal of Wisdom")
+		and not IWin:IsSealActive()
+		and IWin:GetManaPercent("player") < 40 then 
+			Cast("Seal of Wisdom")
+	end
+end
+
+function IWin:SealOfWisdomElite()
+	if IWin:IsSpellLearnt("Seal of Wisdom")
+		and not IWin:IsBuffActive("player","Seal of Wisdom")
+		and not IWin:IsBuffActive("target","Judgement of Wisdom")
+		and IWin:IsElite() then 
+			Cast("Seal of Wisdom")
 	end
 end
 
@@ -433,12 +533,15 @@ end
 SLASH_IDPS1 = '/idps'
 function SlashCmdList.IDPS()
 	IWin:TargetEnemy()
+	IWin:MarkSkull()
 	IWin:BlessingOfSanctuary()
 	IWin:BlessingOfKings()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfPower()
-	IWin:SealofWisdomLowMana()
-	IWin:SealofRighteousness()
+	IWin:SealOfWisdomLowMana()
+	IWin:SealOfWisdomElite()
+	--IWin:SealOfLightWorldboss()
+	IWin:SealOfRighteousness()
 	IWin:ExorcismRanged()
 	IWin:JudgementRanged()
 	IWin:CrusaderStrike()
@@ -459,7 +562,7 @@ function SlashCmdList.ICLEAVE()
 	IWin:BlessingOfPower()
 	IWin:HolyShield()
 	IWin:Consecration()
-	IWin:SealofWisdom()
+	IWin:SealOfWisdom()
 	IWin:HolyWrath()
 	IWin:JudgementRanged()
 	IWin:CrusaderStrike()
@@ -468,27 +571,15 @@ function SlashCmdList.ICLEAVE()
 	IWin:StartAttack()
 end
 
----- itank button ----
-SLASH_ITANK1 = '/itank'
-function SlashCmdList.ITANK()
-	IWin:TargetEnemy()
-
-	IWin:StartAttack()
-end
-
----- ihodor button ----
-SLASH_IHODOR1 = '/ihodor'
-function SlashCmdList.IHODOR()
-	IWin:TargetEnemy()
-
-	IWin:StartAttack()
-end
-
 ---- ichase button ----
 SLASH_ICHASE1 = '/ichase'
 function SlashCmdList.ICHASE()
 	IWin:TargetEnemy()
-
+	IWin:HandOfFreedom()
+	IWin:SealOfJustice()
+	IWin:JudgementReact()
+	IWin:Cleanse()
+	IWin:Purify()
 	IWin:StartAttack()
 end
 
