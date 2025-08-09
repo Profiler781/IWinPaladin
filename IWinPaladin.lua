@@ -170,6 +170,10 @@ function IWin:GetHealthPercent(unit)
 	return UnitHealth(unit) / UnitHealthMax(unit) * 100
 end
 
+function IWin:IsExecutePhase()
+	return IWin:GetHealthPercent("target") <= 20
+end
+
 function IWin:GetManaPercent(unit)
 	return UnitMana(unit) / UnitManaMax(unit) * 100
 end
@@ -339,6 +343,14 @@ function IWin:CrusaderStrike()
 	end
 end
 
+function IWin:DivineShield()
+	if IWin:IsSpellLearnt("Divine Shield")
+		and not IWin:IsOnCooldown("Divine Shield")
+		and not UnitAffectingCombat("player") then
+			Cast("Divine Shield")
+	end
+end
+
 function IWin:Exorcism()
 	if IWin:IsSpellLearnt("Exorcism")
 		and not IWin:IsOnCooldown("Exorcism")
@@ -369,6 +381,14 @@ function IWin:HammerOfJustice()
 	end
 end
 
+function IWin:HammerOfWrath()
+	if IWin:IsSpellLearnt("Hammer of Wrath")
+		and not IWin:IsOnCooldown("Hammer of Wrath")
+		and IWin:IsExecutePhase() then
+			Cast("Hammer of Wrath")
+	end
+end
+
 function IWin:HandOfFreedom()
 	if IWin:IsSpellLearnt("Hand of Freedom")
 		and not IWin:IsOnCooldown("Hand of Freedom")
@@ -383,6 +403,17 @@ function IWin:HandOfReckoning()
 		and not IWin:IsOnCooldown("Hand of Reckoning")
 		and not IWin:IsTaunted() then
 			Cast("Hand of Reckoning")
+	end
+end
+
+function IWin:Hearthstone()
+	for bag = 0, 4 do
+		for slot = 1, GetContainerNumSlots(bag) do
+			local itemName = GetContainerItemLink(bag, slot)
+			if itemName and strfind(itemName,"Hearthstone") then
+				UseContainerItem(bag, slot)
+			end
+		end
 	end
 end
 
@@ -546,6 +577,7 @@ function SlashCmdList.IDPS()
 	--IWin:SealOfLightWorldboss()
 	IWin:SealOfCommand()
 	IWin:SealOfRighteousness()
+	IWin:HammerOfWrath()
 	IWin:ExorcismRanged()
 	IWin:JudgementRanged()
 	IWin:CrusaderStrike()
@@ -567,6 +599,7 @@ function SlashCmdList.ICLEAVE()
 	IWin:HolyShield()
 	IWin:Consecration()
 	IWin:SealOfWisdom()
+	IWin:HammerOfWrath()
 	IWin:HolyWrath()
 	IWin:JudgementRanged()
 	IWin:CrusaderStrike()
@@ -602,4 +635,11 @@ function SlashCmdList.ITAUNT()
 	IWin:TargetEnemy()
 	IWin:HandOfReckoning()
 	IWin:StartAttack()
+end
+
+---- ibubblehearth button ----
+SLASH_IBUBBLEHEARTH1 = '/ibubblehearth'
+function SlashCmdList.IBUBBLEHEARTH()
+	IWin:DivineShield()
+	IWin:Hearthstone()
 end
