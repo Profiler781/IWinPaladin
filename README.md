@@ -4,8 +4,9 @@ Smart macros for Turtle Paladins. Make macros with commands. Put them on your ac
 
 
 ## Commands
-    /idps        Single target DPS rotation
-    /icleave     Multi target DPS rotation
+    /idps        Single target rotation
+    /icleave     Multi target rotation
+    /ichase      Stick to your target with Judgement of Justice and Hand of Freedom
     /istun       Stun with Hammer of Justice or Repentance
     /itaunt      Hand of Reckoning if the target is not under another taunt effect
 
