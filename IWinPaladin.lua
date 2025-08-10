@@ -346,7 +346,7 @@ end
 function IWin:DivineShield()
 	if IWin:IsSpellLearnt("Divine Shield")
 		and not IWin:IsOnCooldown("Divine Shield")
-		and not UnitAffectingCombat("player") then
+		and UnitAffectingCombat("player") then
 			Cast("Divine Shield")
 	end
 end
@@ -492,6 +492,14 @@ function IWin:Repentance()
 	end
 end
 
+function IWin:RepentanceRaid()
+	if IWin:IsSpellLearnt("Repentance")
+		and not IWin:IsOnCooldown("Repentance")
+		and UnitInRaid("player") then
+			Cast("Repentance")
+	end
+end
+
 function IWin:SealOfCommand()
 	if IWin:IsSpellLearnt("Seal of Command")
 		and (
@@ -584,6 +592,7 @@ function SlashCmdList.IDPS()
 	IWin:HolyStrike()
 	IWin:Exorcism()
 	IWin:Judgement()
+	IWin:RepentanceRaid()
 	IWin:StartAttack()
 end
 
@@ -605,6 +614,7 @@ function SlashCmdList.ICLEAVE()
 	IWin:CrusaderStrike()
 	IWin:HolyStrike()
 	IWin:Judgement()
+	IWin:RepentanceRaid()
 	IWin:StartAttack()
 end
 
