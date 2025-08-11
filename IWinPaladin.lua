@@ -22,6 +22,9 @@ IWin:RegisterEvent("ADDON_LOADED")
 IWin:SetScript("OnEvent", function()
 	if event == "ADDON_LOADED" and arg1 == "IWinPaladin" then
 		DEFAULT_CHAT_FRAME:AddMessage("|cff0066ff IWinPaladin system loaded.|r")
+		if iwinpaladinjudgementtank == nil then iwinpaladinjudgementtank = "wisdom" end
+		if iwinpaladinjudgementdps == nil then iwinpaladinjudgementdps = "wisdom" end
+		if iwinpaladinjudgementpull == nil then iwinpaladinjudgementpull = "wisdom" end
 		IWin:UnregisterEvent("ADDON_LOADED")
 	elseif event == "ACTIONBAR_UPDATE_COOLDOWN" and arg1 == nil then
 		IWin_CombatVar["gcd"] = GetTime()
@@ -240,17 +243,8 @@ function IWin:IsSealActive()
 		or IWin:IsBuffActive("player","Seal of Command")
 end
 
-function IWin:IsJudgementActive()
-	return IWin:IsBuffActive("target","Judgement of Wisdom")
-		or IWin:IsBuffActive("target","Judgement of Light")
-		or IWin:IsBuffActive("target","Judgement of Justice")
-		or IWin:IsBuffActive("target","Judgement of the Crusader")
-end
-
-function IWin:IsJudgementOverwrite()
-	return IWin:IsJudgementActive()
-		and not IWin:IsBuffActive("player","Seal of Righteousness")
-		and not IWin:IsBuffActive("player","Seal of Command")
+function IWin:IsJudgementOverwrite(judgement, seal)
+	return IWin:IsBuffActive("target",judgement) and IWin:IsBuffActive("player",seal)
 end
 
 function IWin:IsBlessingActive()
@@ -452,7 +446,10 @@ function IWin:Judgement()
 	if IWin:IsSpellLearnt("Judgement")
 		and not IWin:IsOnCooldown("Judgement")
 		and IWin:IsSealActive()
-		and not IWin:IsJudgementOverwrite()
+		and not IWin:IsJudgementOverwrite("Judgement of Wisdom","Seal of Wisdom")
+		and not IWin:IsJudgementOverwrite("Judgement of Light","Seal of Light")
+		and not IWin:IsJudgementOverwrite("Judgement of the Crusader","Seal of the Crusader")
+		and not IWin:IsJudgementOverwrite("Judgement of Justice","Seal of Justice")
 		and not IWin:IsGCDActive() then
 			Cast("Judgement")
 	end
@@ -470,7 +467,10 @@ function IWin:JudgementRanged()
 	if IWin:IsSpellLearnt("Judgement")
 		and not IWin:IsOnCooldown("Judgement")
 		and IWin:IsSealActive()
-		and not IWin:IsJudgementOverwrite()
+		and not IWin:IsJudgementOverwrite("Judgement of Wisdom","Seal of Wisdom")
+		and not IWin:IsJudgementOverwrite("Judgement of Light","Seal of Light")
+		and not IWin:IsJudgementOverwrite("Judgement of the Crusader","Seal of the Crusader")
+		and not IWin:IsJudgementOverwrite("Judgement of Justice","Seal of Justice")
 		and not IWin:IsGCDActive()
 		and not IWin:IsInMeleeRange() then
 			Cast("Judgement")
@@ -518,12 +518,28 @@ function IWin:SealOfJustice()
 	end
 end
 
-function IWin:SealOfLightWorldboss()
+function IWin:SealOfLightElite()
 	if IWin:IsSpellLearnt("Seal of Light")
-		and not IWin:IsSealActive()
+		and not IWin:IsBuffActive("player","Seal of Light")
 		and not IWin:IsBuffActive("target","Judgement of Light")
-		and UnitClassification("target") == "worldboss" then 
-			Cast("Seal of Light")
+		and (
+				IWin:IsElite()
+				or (
+						UnitInRaid("player")
+						and not UnitExists("target")
+					)
+			)
+		and ((
+				not UnitAffectingCombat("player")
+				and iwinpaladinjudgementpull == "light"
+			) or (
+				IWin:IsTanking()
+				and iwinpaladinjudgementtank == "light"
+			) or (
+				not IWin:IsTanking()
+				and iwinpaladinjudgementdps == "light"
+			)) then
+				Cast("Seal of Light")
 	end
 end
 
@@ -534,6 +550,31 @@ function IWin:SealOfRighteousness()
 				or IWin:GetManaPercent("player") > 95
 			) then 
 			Cast("Seal of Righteousness")
+	end
+end
+
+function IWin:SealOfTheCrusaderElite()
+	if IWin:IsSpellLearnt("Seal of the Crusader")
+		and not IWin:IsBuffActive("player","Seal of the Crusader")
+		and not IWin:IsBuffActive("target","Judgement of the Crusader")
+		and (
+				IWin:IsElite()
+				or (
+						UnitInRaid("player")
+						and not UnitExists("target")
+					)
+			)
+		and ((
+				not UnitAffectingCombat("player")
+				and iwinpaladinjudgementpull == "crusader"
+			) or (
+				IWin:IsTanking()
+				and iwinpaladinjudgementtank == "crusader"
+			) or (
+				not IWin:IsTanking()
+				and iwinpaladinjudgementdps == "crusader"
+			)) then
+				Cast("Seal of the Crusader")
 	end
 end
 
@@ -549,7 +590,10 @@ function IWin:SealOfWisdomMana()
 		and not IWin:IsSealActive()
 		and (
 				IWin:GetManaPercent("player") < 40
-				or not UnitAffectingCombat("player")
+				or (
+						GetNumPartyMembers() == 0
+						and not UnitAffectingCombat("player")
+					)
 			) then 
 			Cast("Seal of Wisdom")
 	end
@@ -559,8 +603,24 @@ function IWin:SealOfWisdomElite()
 	if IWin:IsSpellLearnt("Seal of Wisdom")
 		and not IWin:IsBuffActive("player","Seal of Wisdom")
 		and not IWin:IsBuffActive("target","Judgement of Wisdom")
-		and IWin:IsElite() then 
-			Cast("Seal of Wisdom")
+		and (
+				IWin:IsElite()
+				or (
+						UnitInRaid("player")
+						and not UnitExists("target")
+					)
+			)
+		and ((
+				not UnitAffectingCombat("player")
+				and iwinpaladinjudgementpull == "wisdom"
+			) or (
+				IWin:IsTanking()
+				and iwinpaladinjudgementtank == "wisdom"
+			) or (
+				not IWin:IsTanking()
+				and iwinpaladinjudgementdps == "wisdom"
+			)) then
+				Cast("Seal of Wisdom")
 	end
 end
 
@@ -569,6 +629,45 @@ SLASH_IDEBUG1 = '/idebug'
 function SlashCmdList.IDEBUG()
 	DEFAULT_CHAT_FRAME:AddMessage(IWin:GetBuffRemaining("player","Zeal"))
 	
+end
+
+---- Judgement management ----
+SLASH_IWINPALADIN1 = "/iwinpaladin"
+function SlashCmdList.IWINPALADIN(command)
+	if not command then return end
+	local arguments = {}
+	for token in string.gfind(command, "%S+") do
+		table.insert(arguments, token)
+	end
+	if arguments[2] ~= "wisdom"
+		and arguments[2] ~= "light"
+		and arguments[2] ~= "crusader"
+		and arguments[2] ~= nil then
+			DEFAULT_CHAT_FRAME:AddMessage("Unkown judgement. Possible values: wisdom, light, crusader.")
+			return
+	end
+    if arguments[1] == "judgement" then
+        iwinpaladinjudgementtank = arguments[2]
+        iwinpaladinjudgementdps = arguments[2]
+        iwinpaladinjudgementpull = arguments[2]
+	    DEFAULT_CHAT_FRAME:AddMessage("Judgement all roles: " .. iwinpaladinjudgementtank)
+	elseif arguments[1] == "judgementtank" then
+	    iwinpaladinjudgementtank = arguments[2]
+	    DEFAULT_CHAT_FRAME:AddMessage("Judgement tank: " .. iwinpaladinjudgementtank)
+    elseif arguments[1] == "judgementdps" then
+	    iwinpaladinjudgementdps = arguments[2]
+	    DEFAULT_CHAT_FRAME:AddMessage("Judgement dps: " .. iwinpaladinjudgementdps)
+	elseif arguments[1] == "judgementpull" then
+	    iwinpaladinjudgementpull = arguments[2]
+	    DEFAULT_CHAT_FRAME:AddMessage("Judgement pull: " .. iwinpaladinjudgementpull)
+	else
+		DEFAULT_CHAT_FRAME:AddMessage("Usage:")
+		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin : Current setup")
+		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin judgement <judgementName> : Setup for all roles")
+		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin judgementtank [" .. iwinpaladinjudgementtank .. "] : Setup for tank roles")
+		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin judgementdps [" .. iwinpaladinjudgementdps .. "] : Setup for dps/offtank roles")
+		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin judgementpull [" .. iwinpaladinjudgementpull .. "] : Setup for prepull cast")
+    end
 end
 
 ---- idps button ----
@@ -582,7 +681,8 @@ function SlashCmdList.IDPS()
 	IWin:BlessingOfPower()
 	IWin:SealOfWisdomMana()
 	IWin:SealOfWisdomElite()
-	--IWin:SealOfLightWorldboss()
+	IWin:SealOfLightElite()
+	IWin:SealOfTheCrusaderElite()
 	IWin:SealOfCommand()
 	IWin:SealOfRighteousness()
 	IWin:HammerOfWrath()
@@ -606,8 +706,13 @@ function SlashCmdList.ICLEAVE()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfPower()
 	IWin:HolyShield()
+	IWin:SealOfWisdomMana()
+	IWin:SealOfWisdomElite()
+	IWin:SealOfLightElite()
+	IWin:SealOfTheCrusaderElite()
+	IWin:SealOfCommand()
+	IWin:SealOfRighteousness()
 	IWin:Consecration()
-	IWin:SealOfWisdom()
 	IWin:HammerOfWrath()
 	IWin:HolyWrath()
 	IWin:JudgementRanged()
