@@ -24,7 +24,7 @@ The feature is designed to manage judgement assignements on elites and worldboss
 judgementName possible values: wisdom, light, crusader.
 
 Example: /iwinpaladin judgement wisdom
-> Will setup wisdom as the default judgement for all roles.
+  Will setup wisdom as the default judgement for all roles.
 
 
 ## Required Addons
