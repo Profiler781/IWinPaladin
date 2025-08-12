@@ -13,21 +13,26 @@ IWin.t = CreateFrame("GameTooltip", "IWin_T", UIParent, "GameTooltipTemplate")
 --local IWin_Settings = {}
 local IWin_CombatVar = {
 	["gcd"] = 0,
+	["weaponAttackSpeed"] = 0,
 }
 local Cast = CastSpellByName
 
 ---- Event Register ----
 IWin:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN")
 IWin:RegisterEvent("ADDON_LOADED")
+IWin:RegisterEvent("UNIT_INVENTORY_CHANGED")
 IWin:SetScript("OnEvent", function()
 	if event == "ADDON_LOADED" and arg1 == "IWinPaladin" then
 		DEFAULT_CHAT_FRAME:AddMessage("|cff0066ff IWinPaladin system loaded.|r")
 		if iwinpaladinjudgementtank == nil then iwinpaladinjudgementtank = "wisdom" end
 		if iwinpaladinjudgementdps == nil then iwinpaladinjudgementdps = "wisdom" end
 		if iwinpaladinjudgementpull == nil then iwinpaladinjudgementpull = "wisdom" end
+		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player")
 		IWin:UnregisterEvent("ADDON_LOADED")
 	elseif event == "ACTIONBAR_UPDATE_COOLDOWN" and arg1 == nil then
 		IWin_CombatVar["gcd"] = GetTime()
+	elseif event == "UNIT_INVENTORY_CHANGED" and arg1 == "player" then
+		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player")
 	end
 end)
 
@@ -249,7 +254,7 @@ end
 
 function IWin:IsBlessingActive()
 	return IWin:IsBuffActive("player","Blessing of Sanctuary")
-		or IWin:IsBuffActive("player","Blessing of Power")
+		or IWin:IsBuffActive("player","Blessing of Might")
 		or IWin:IsBuffActive("player","Blessing of Wisdom")
 		or IWin:IsBuffActive("player","Blessing of Light")
 		or IWin:IsBuffActive("player","Blessing of Kings")
@@ -293,10 +298,10 @@ function IWin:BlessingOfKings()
 	end
 end
 
-function IWin:BlessingOfPower()
-	if IWin:IsSpellLearnt("Blessing of Power")
+function IWin:BlessingOfMight()
+	if IWin:IsSpellLearnt("Blessing of Might")
 		and not IWin:IsBlessingActive() then
-			Cast("Blessing of Power")
+			Cast("Blessing of Might")
 	end
 end
 
@@ -502,6 +507,7 @@ end
 
 function IWin:SealOfCommand()
 	if IWin:IsSpellLearnt("Seal of Command")
+		and IWin_CombatVar["weaponAttackSpeed"] > 3.49
 		and (
 				not IWin:IsSealActive()
 				or IWin:GetManaPercent("player") > 95
@@ -547,7 +553,10 @@ function IWin:SealOfRighteousness()
 	if IWin:IsSpellLearnt("Seal of Righteousness")
 		and (
 				not IWin:IsSealActive()
-				or IWin:GetManaPercent("player") > 95
+				or (
+						IWin:GetManaPercent("player") > 95
+						and not IWin:IsBuffActive("player","Seal of Righteousness")
+					)
 			) then 
 			Cast("Seal of Righteousness")
 	end
@@ -678,7 +687,7 @@ function SlashCmdList.IDPS()
 	IWin:BlessingOfSanctuary()
 	IWin:BlessingOfKings()
 	IWin:BlessingOfWisdom()
-	IWin:BlessingOfPower()
+	IWin:BlessingOfMight()
 	IWin:SealOfWisdomMana()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
@@ -704,7 +713,7 @@ function SlashCmdList.ICLEAVE()
 	IWin:BlessingOfSanctuary()
 	IWin:BlessingOfKings()
 	IWin:BlessingOfWisdom()
-	IWin:BlessingOfPower()
+	IWin:BlessingOfMight()
 	IWin:HolyShield()
 	IWin:SealOfWisdomMana()
 	IWin:SealOfWisdomElite()
@@ -740,8 +749,8 @@ SLASH_ISTUN1 = '/istun'
 function SlashCmdList.ISTUN()
 	IWin:TargetEnemy()
 	IWin:HammerOfJustice()
-	IWin:Repentance()
 	IWin:StartAttack()
+	IWin:Repentance()
 end
 
 ---- itaunt button ----
