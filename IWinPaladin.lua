@@ -28,10 +28,11 @@ IWin:SetScript("OnEvent", function()
 		if iwinpaladinjudgementdps == nil then iwinpaladinjudgementdps = "wisdom" end
 		if iwinpaladinjudgementpull == nil then iwinpaladinjudgementpull = "wisdom" end
 		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player")
+		IWin.hasSuperwow = SetAutoloot and true or false
 		IWin:UnregisterEvent("ADDON_LOADED")
 	elseif event == "ACTIONBAR_UPDATE_COOLDOWN" and arg1 == nil then
 		IWin_CombatVar["gcd"] = GetTime()
-	elseif event == "UNIT_INVENTORY_CHANGED" and arg1 == "player" then
+	elseif event == "UNIT_INVENTORY_CHANGED" and arg1 == "player" and not IWin:IsBuffActive("player","Zeal") then
 		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player")
 	end
 end)
@@ -48,16 +49,33 @@ IWin_Taunt = {
 
 ---- Functions ----
 function IWin:GetBuffIndex(unit, spell)
-	local index = 1
-	while UnitBuff(unit, index) do
-		IWin_T:SetOwner(WorldFrame, "ANCHOR_NONE")
-		IWin_T:ClearLines()
-		IWin_T:SetUnitBuff(unit, index)
-		local buffName = IWin_TTextLeft1:GetText()
-		if buffName == spell then
-			return index
+	if unit == "player" then
+		if not IWin.hasSuperwow then
+	    	DEFAULT_CHAT_FRAME:AddMessage("|cFF00FFFFbalakethelock's SuperWoW|r required:")
+	        DEFAULT_CHAT_FRAME:AddMessage("https://github.com/balakethelock/SuperWoW")
+	    	return 0
 		end
-		index = index + 1
+	    local index = 0
+	    while true do
+	        spellID = GetPlayerBuffID(index)
+	        if not spellID then break end
+	        if spell == SpellInfo(spellID) then
+	        	return index
+	        end
+	        index = index + 1
+	    end
+	else
+		local index = 1
+		while UnitBuff(unit, index) do
+			IWin_T:SetOwner(WorldFrame, "ANCHOR_NONE")
+			IWin_T:ClearLines()
+			IWin_T:SetUnitBuff(unit, index)
+			local buffName = IWin_TTextLeft1:GetText()
+			if buffName == spell then
+				return index
+			end
+			index = index + 1
+		end
 	end
 	return nil
 end
@@ -103,11 +121,11 @@ function IWin:GetBuffRemaining(unit, spell)
 	if unit == "player" then
 		local index = IWin:GetBuffIndex(unit, spell)
 		if index then
-			return GetPlayerBuffTimeLeft(index - 2)
+			return GetPlayerBuffTimeLeft(index)
 		end
 		local index = IWin:GetDebuffIndex(unit, spell)
 		if index then
-			return GetPlayerBuffTimeLeft(index - 2)
+			return GetPlayerBuffTimeLeft(index)
 		end
 	elseif unit == "target" then
 		local libdebuff = pfUI and pfUI.api and pfUI.api.libdebuff or ShaguTweaks and ShaguTweaks.libdebuff
@@ -685,7 +703,7 @@ function SlashCmdList.IDPS()
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
 	IWin:BlessingOfSanctuary()
-	IWin:BlessingOfKings()
+	--IWin:BlessingOfKings()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfMight()
 	IWin:SealOfWisdomMana()
@@ -711,7 +729,7 @@ function SlashCmdList.ICLEAVE()
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
 	IWin:BlessingOfSanctuary()
-	IWin:BlessingOfKings()
+	--IWin:BlessingOfKings()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfMight()
 	IWin:HolyShield()

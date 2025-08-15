@@ -1,6 +1,6 @@
-# IWinPaladin
+# IWinPaladin v1.3
 
-Smart macros for Turtle Paladins. Make macros with commands. Put them on your action bars. Enjoy!
+Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on your action bars. Enjoy!
 
 
 ## Commands
@@ -27,7 +27,10 @@ Example: /iwinpaladin judgement wisdom
 => Will setup wisdom as the default judgement for all roles.
 
 
-## Required Addons
+## Required Mods & Addons
+Mandatory Mods:
+* [SuperWoW](https://github.com/balakethelock/SuperWoW/), A mod made for fixing client bugs and expanding the lua-based API used by user interface addons.
+
 You need one of the following addons:
 * [pfUI](https://shagu.org/pfUI/), A full UI replacement.
 * [ShaguTweaks](https://shagu.org/ShaguTweaks/), A non-intrusive quality of life addon.
