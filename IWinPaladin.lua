@@ -402,6 +402,14 @@ end
 function IWin:HammerOfWrath()
 	if IWin:IsSpellLearnt("Hammer of Wrath")
 		and not IWin:IsOnCooldown("Hammer of Wrath")
+		and (
+				(
+					IWin:IsElite()
+					and not IWin:IsTanking()
+					and IWin:GetManaPercent("player") > 20
+				)
+				or UnitIsPVP("target")
+			)
 		and IWin:IsExecutePhase() then
 			Cast("Hammer of Wrath")
 	end
