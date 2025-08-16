@@ -23,6 +23,7 @@ The feature is designed to manage judgement assignements on elites and worldboss
     /iwinpaladin soc <socOption>                    Setup for Seal of Command
 
 judgementName possible values: wisdom, light, crusader.
+
 socOption possible values: auto, on, off.
 
 Example: /iwinpaladin judgement wisdom
