@@ -2,8 +2,8 @@
 
 Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on your action bars. Enjoy!
 
-
 ## Commands
+
     /idps           Single target rotation
     /icleave        Multi target rotation
     /ichase         Stick to your target with Judgement of Justice and Hand of Freedom
@@ -11,8 +11,8 @@ Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on
     /itaunt         Hand of Reckoning if the target is not under another taunt effect
     /ibubblehearth  Divine Shield and Hearthstone. Shame!
 
-
 ## Setup commands
+
 The feature is designed to manage judgement assignements on elites and worldbosses.
 
     /iwinpaladin                                    Current setup
@@ -26,8 +26,8 @@ judgementName possible values: wisdom, light, crusader.
 Example: /iwinpaladin judgement wisdom
 => Will setup wisdom as the default judgement for all roles.
 
-
 ## Required Mods & Addons
+
 Mandatory Mods:
 * [SuperWoW](https://github.com/balakethelock/SuperWoW/), A mod made for fixing client bugs and expanding the lua-based API used by user interface addons.
 
