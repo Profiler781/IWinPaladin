@@ -20,8 +20,10 @@ The feature is designed to manage judgement assignements on elites and worldboss
     /iwinpaladin judgementtank <judgementName>      Setup for tank roles
     /iwinpaladin judgementdps <judgementName>       Setup for dps/offtank roles
     /iwinpaladin judgementpull <judgementName>      Setup for prepull cast
+    /iwinpaladin soc <socOption>                    Setup for Seal of Command
 
 judgementName possible values: wisdom, light, crusader.
+socOption possible values: auto, on, off.
 
 Example: /iwinpaladin judgement wisdom
 => Will setup wisdom as the default judgement for all roles.

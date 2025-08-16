@@ -2,7 +2,7 @@
 ## Title: IWinPaladin
 ## Notes: Smart macros for turtle paladins
 ## Version: 1.3
-## SavedVariablesPerCharacter: iwinpaladinjudgementtank, iwinpaladinjudgementdps, iwinpaladinjudgementpull
+## SavedVariablesPerCharacter: iwinpaladinjudgementtank, iwinpaladinjudgementdps, iwinpaladinjudgementpull, iwinpaladinsoc
 ## OptionalDeps: ShaguTweaks, pfUI
 
 IWinPaladin.lua

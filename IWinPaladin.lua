@@ -27,6 +27,7 @@ IWin:SetScript("OnEvent", function()
 		if iwinpaladinjudgementtank == nil then iwinpaladinjudgementtank = "wisdom" end
 		if iwinpaladinjudgementdps == nil then iwinpaladinjudgementdps = "wisdom" end
 		if iwinpaladinjudgementpull == nil then iwinpaladinjudgementpull = "wisdom" end
+		if iwinpaladinsoc == nil then iwinpaladinsoc = "auto" end
 		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player")
 		IWin.hasSuperwow = SetAutoloot and true or false
 		IWin:UnregisterEvent("ADDON_LOADED")
@@ -525,7 +526,13 @@ end
 
 function IWin:SealOfCommand()
 	if IWin:IsSpellLearnt("Seal of Command")
-		and IWin_CombatVar["weaponAttackSpeed"] > 3.49
+		and (
+				(
+					IWin_CombatVar["weaponAttackSpeed"] > 3.49
+					and iwinpaladinsoc == "auto"
+				)
+				or iwinpaladinsoc == "on"
+			)
 		and (
 				not IWin:IsSealActive()
 				or IWin:GetManaPercent("player") > 95
@@ -666,12 +673,22 @@ function SlashCmdList.IWINPALADIN(command)
 	for token in string.gfind(command, "%S+") do
 		table.insert(arguments, token)
 	end
-	if arguments[2] ~= "wisdom"
-		and arguments[2] ~= "light"
-		and arguments[2] ~= "crusader"
-		and arguments[2] ~= nil then
-			DEFAULT_CHAT_FRAME:AddMessage("Unkown judgement. Possible values: wisdom, light, crusader.")
-			return
+	if arguments[1] == "judgement" or "judgementtank" or "judgementdps" or "judgementpull" then
+		if arguments[2] ~= "wisdom"
+			and arguments[2] ~= "light"
+			and arguments[2] ~= "crusader"
+			and arguments[2] ~= nil then
+				DEFAULT_CHAT_FRAME:AddMessage("Unkown judgement. Possible values: wisdom, light, crusader.")
+				return
+		end
+	elseif arguments[1] == "soc" then
+		if arguments[2] ~= "auto"
+			and arguments[2] ~= "on"
+			and arguments[2] ~= "off"
+			and arguments[2] ~= nil then
+				DEFAULT_CHAT_FRAME:AddMessage("Unkown parameter. Possible values: auto, on, off.")
+				return
+		end
 	end
     if arguments[1] == "judgement" then
         iwinpaladinjudgementtank = arguments[2]
@@ -687,6 +704,9 @@ function SlashCmdList.IWINPALADIN(command)
 	elseif arguments[1] == "judgementpull" then
 	    iwinpaladinjudgementpull = arguments[2]
 	    DEFAULT_CHAT_FRAME:AddMessage("Judgement pull: " .. iwinpaladinjudgementpull)
+	elseif arguments[1] == "soc" then
+	    iwinpaladinsoc = arguments[2]
+	    DEFAULT_CHAT_FRAME:AddMessage("Seal of Command: " .. iwinpaladinsoc)
 	else
 		DEFAULT_CHAT_FRAME:AddMessage("Usage:")
 		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin : Current setup")
@@ -694,6 +714,7 @@ function SlashCmdList.IWINPALADIN(command)
 		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin judgementtank [" .. iwinpaladinjudgementtank .. "] : Setup for tank roles")
 		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin judgementdps [" .. iwinpaladinjudgementdps .. "] : Setup for dps/offtank roles")
 		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin judgementpull [" .. iwinpaladinjudgementpull .. "] : Setup for prepull cast")
+		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin soc [" .. iwinpaladinsoc .. "] : Setup for Seal of Command")
     end
 end
 
