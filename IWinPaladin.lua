@@ -33,8 +33,8 @@ IWin:SetScript("OnEvent", function()
 		IWin:UnregisterEvent("ADDON_LOADED")
 	elseif event == "ACTIONBAR_UPDATE_COOLDOWN" and arg1 == nil then
 		IWin_CombatVar["gcd"] = GetTime()
-	elseif event == "UNIT_INVENTORY_CHANGED" and arg1 == "player" and not IWin:IsBuffActive("player","Zeal") then
-		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player")
+	elseif event == "UNIT_INVENTORY_CHANGED" and arg1 == "player" then
+		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player") * (1 + IWin:GetBuffStack("player","Zeal") * 0.05)
 	end
 end)
 
