@@ -593,6 +593,7 @@ function IWin:SealOfRighteousness()
 				or (
 						IWin:GetManaPercent("player") > 95
 						and not IWin:IsBuffActive("player","Seal of Righteousness")
+						and UnitAffectingCombat("player")
 					)
 			) then 
 			Cast("Seal of Righteousness")
