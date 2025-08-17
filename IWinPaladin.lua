@@ -211,9 +211,9 @@ end
 
 function IWin:IsInRange(spell)
 	if not IsSpellInRange then
-        return CheckInteractDistance("target", 3)
+        return CheckInteractDistance("target", 3) ~= nil
 	else
-		return IsSpellInRange(spell, "target")
+		return IsSpellInRange(spell, "target") == 1
 	end
 end
 
