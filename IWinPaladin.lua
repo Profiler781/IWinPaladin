@@ -209,8 +209,12 @@ function IWin:IsManaAvailable(spell)
 	return UnitMana("player") >= IWin_ManaCost[spell]
 end
 
-function IWin:IsInMeleeRange()
-	return CheckInteractDistance("target", 3) ~= nil
+function IWin:IsInRange(spell)
+	if not IsSpellInRange then
+        return CheckInteractDistance("target", 3)
+	else
+		return IsSpellInRange(spell, "target")
+	end
 end
 
 function IWin:IsTanking()
@@ -387,7 +391,7 @@ function IWin:ExorcismRanged()
 				UnitCreatureType("target") == "undead"
 				or UnitCreatureType("target") == "demon"
 			)
-		and not IWin:IsInMeleeRange() then
+		and not IWin:IsInRange("Holy Strike") then
 			Cast("Exorcism")
 	end
 end
@@ -504,7 +508,7 @@ function IWin:JudgementRanged()
 		and not IWin:IsJudgementOverwrite("Judgement of the Crusader","Seal of the Crusader")
 		and not IWin:IsJudgementOverwrite("Judgement of Justice","Seal of Justice")
 		and not IWin:IsGCDActive()
-		and not IWin:IsInMeleeRange() then
+		and not IWin:IsInRange("Holy Strike") then
 			Cast("Judgement")
 	end
 end

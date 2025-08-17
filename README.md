@@ -13,7 +13,7 @@ Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on
 
 ## Setup commands
 
-The feature is designed to manage judgement assignements on elites and worldbosses.
+The judgement options are designed to manage judgement assignements on elites and worldbosses.
 
     /iwinpaladin                                    Current setup
     /iwinpaladin judgement <judgementName>          Setup for all roles
@@ -33,6 +33,9 @@ Example: /iwinpaladin judgement wisdom
 
 Mandatory Mods:
 * [SuperWoW](https://github.com/balakethelock/SuperWoW/), A mod made for fixing client bugs and expanding the lua-based API used by user interface addons.
+
+Optionnal Mods:
+* [Nampower](https://github.com/pepopo978/nampower/), A mod made to dramatically increase cast efficiency on the 1.12.1 client.
 
 You need one of the following addons:
 * [pfUI](https://shagu.org/pfUI/), A full UI replacement.
