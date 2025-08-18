@@ -100,12 +100,12 @@ function IWin:GetBuffStack(unit, spell)
 	local index = IWin:GetBuffIndex(unit, spell)
 	if index then
 		local _, stack = UnitBuff(unit, index)
-		return stack
+		return stack or 0
 	end
 	local index = IWin:GetDebuffIndex(unit, spell)
 	if index then
 		local _, stack = UnitDebuff(unit, index)
-		return stack
+		return stack or 0
 	end
 	return 0
 end
@@ -115,7 +115,7 @@ function IWin:IsBuffStack(unit, spell, stack)
 end
 
 function IWin:IsBuffActive(unit, spell)
-	return IWin:GetBuffStack(unit, spell) ~= 0
+	return IWin:GetBuffRemaining(unit, spell) ~= 0
 end
 
 function IWin:GetBuffRemaining(unit, spell)
