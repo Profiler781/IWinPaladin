@@ -284,7 +284,7 @@ function IWin:IsBlessingActive()
 		or IWin:IsBuffActive("player","Blessing of Salvation")
 end
 
----- Actions ----
+---- General Actions ----
 function IWin:TargetEnemy()
 	if not UnitExists("target") or UnitIsDead("target") or UnitIsFriend("target", "player") then
 		TargetNearestEnemy()
@@ -301,8 +301,9 @@ function IWin:StartAttack()
 			end
 		end
 	end
-	if not attackActionFound and not PlayerFrame.inCombat then
-		AttackTarget()
+	if not attackActionFound
+		and not PlayerFrame.inCombat then
+			AttackTarget()
 	end
 end
 
@@ -314,6 +315,7 @@ function IWin:MarkSkull()
 	end
 end
 
+---- Class Actions ----
 function IWin:BlessingOfKings()
 	if IWin:IsSpellLearnt("Blessing of Kings")
 		and not IWin:IsBuffActive("player","Blessing of Kings") then
@@ -376,9 +378,10 @@ end
 function IWin:Exorcism()
 	if IWin:IsSpellLearnt("Exorcism")
 		and not IWin:IsOnCooldown("Exorcism")
+		and IWin:GetManaPercent("player") > 10
 		and (
-				UnitCreatureType("target") == "undead"
-				or UnitCreatureType("target") == "demon"
+				UnitCreatureType("target") == "Undead"
+				or UnitCreatureType("target") == "Demon"
 			) then
 			Cast("Exorcism")
 	end
@@ -387,9 +390,10 @@ end
 function IWin:ExorcismRanged()
 	if IWin:IsSpellLearnt("Exorcism")
 		and not IWin:IsOnCooldown("Exorcism")
+		and IWin:GetManaPercent("player") > 10
 		and (
-				UnitCreatureType("target") == "undead"
-				or UnitCreatureType("target") == "demon"
+				UnitCreatureType("target") == "Undead"
+				or UnitCreatureType("target") == "Demon"
 			)
 		and not IWin:IsInRange("Holy Strike") then
 			Cast("Exorcism")
@@ -471,8 +475,8 @@ function IWin:HolyWrath()
 		and not IWin:IsOnCooldown("Holy Wrath")
 		and not IWin:IsTanking()
 		and (
-				UnitCreatureType("target") == "undead"
-				or UnitCreatureType("target") == "demon"
+				UnitCreatureType("target") == "Undead"
+				or UnitCreatureType("target") == "Demon"
 			) then
 			Cast("Holy Wrath")
 	end
@@ -588,6 +592,7 @@ end
 
 function IWin:SealOfRighteousness()
 	if IWin:IsSpellLearnt("Seal of Righteousness")
+		and IWin:GetManaPercent("player") > 10
 		and (
 				not IWin:IsSealActive()
 				or (
