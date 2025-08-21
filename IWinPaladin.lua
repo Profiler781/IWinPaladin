@@ -354,6 +354,7 @@ end
 
 function IWin:Consecration()
 	if IWin:IsSpellLearnt("Consecration")
+		and IWin:GetManaPercent("player") > 15
 		and not IWin:IsOnCooldown("Consecration") then
 			Cast("Consecration")
 	end
@@ -378,7 +379,7 @@ end
 function IWin:Exorcism()
 	if IWin:IsSpellLearnt("Exorcism")
 		and not IWin:IsOnCooldown("Exorcism")
-		and IWin:GetManaPercent("player") > 10
+		and IWin:GetManaPercent("player") > 15
 		and (
 				UnitCreatureType("target") == "Undead"
 				or UnitCreatureType("target") == "Demon"
@@ -390,7 +391,7 @@ end
 function IWin:ExorcismRanged()
 	if IWin:IsSpellLearnt("Exorcism")
 		and not IWin:IsOnCooldown("Exorcism")
-		and IWin:GetManaPercent("player") > 10
+		and IWin:GetManaPercent("player") > 15
 		and (
 				UnitCreatureType("target") == "Undead"
 				or UnitCreatureType("target") == "Demon"
@@ -592,7 +593,7 @@ end
 
 function IWin:SealOfRighteousness()
 	if IWin:IsSpellLearnt("Seal of Righteousness")
-		and IWin:GetManaPercent("player") > 10
+		and IWin:GetManaPercent("player") > 15
 		and (
 				not IWin:IsSealActive()
 				or (
