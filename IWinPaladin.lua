@@ -193,6 +193,18 @@ function IWin:IsStanceActive(stance)
 	return false
 end
 
+function IWin:GetTimeToDie()
+	local ttd = 0
+	if UnitInRaid("player") then
+		ttd = 999
+	elseif GetNumPartyMembers ~= 0 then
+		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Settings["playerToNPCHealthRatio"] * IWin_Settings["outOfRaidCombatLength"] / GetNumPartyMembers()
+	else
+		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Settings["playerToNPCHealthRatio"] * IWin_Settings["outOfRaidCombatLength"]
+	end
+	return ttd
+end
+
 function IWin:GetHealthPercent(unit)
 	return UnitHealth(unit) / UnitHealthMax(unit) * 100
 end
@@ -491,6 +503,11 @@ function IWin:Judgement()
 		and not IWin:IsJudgementOverwrite("Judgement of Light","Seal of Light")
 		and not IWin:IsJudgementOverwrite("Judgement of the Crusader","Seal of the Crusader")
 		and not IWin:IsJudgementOverwrite("Judgement of Justice","Seal of Justice")
+		and (
+				IWin:GetTimeToDie() > 7
+				or IWin:IsBuffActive("player","Seal of Righteousness")
+				or IWin:IsBuffActive("player","Seal of Command")
+			)
 		and not IWin:IsGCDActive() then
 			Cast("Judgement")
 	end
