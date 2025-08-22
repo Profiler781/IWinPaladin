@@ -10,7 +10,10 @@ if UnitClass("player") ~= "Paladin" then return end
 ---- Loading ----
 IWin = CreateFrame("frame",nil,UIParent)
 IWin.t = CreateFrame("GameTooltip", "IWin_T", UIParent, "GameTooltipTemplate")
---local IWin_Settings = {}
+local IWin_Settings = {
+	["outOfRaidCombatLength"] = 25,
+	["playerToNPCHealthRatio"] = 0.75,
+}
 local IWin_CombatVar = {
 	["gcd"] = 0,
 	["weaponAttackSpeed"] = 0,
