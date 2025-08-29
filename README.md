@@ -4,9 +4,11 @@ Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on
 
 ## Commands
 
-    /idps           Single target rotation
-    /icleave        Multi target rotation
-    /itank          Tank rotation
+    /idps           Single target DPS rotation
+    /icleave        Multi target DPS rotation
+    /itank          Single target threat rotation
+    /ihodor         Multi target threat rotation
+    /ieco           Mana regeneration rotation
     /ijudge         Seal and Judgement only
     /ichase         Stick to your target with Judgement of Justice and Hand of Freedom
     /istun          Stun with Hammer of Justice or Repentance
@@ -15,18 +17,16 @@ Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on
 
 ## Setup commands
 
-The judgement options are designed to manage judgement assignements on elites and worldbosses.
-
-    /iwinpaladin                                    Current setup
-    /iwinpaladin judgement <judgementName>          Setup for Judgement
-    /iwinpaladin soc <socOption>                    Setup for Seal of Command
+    /iwin                                    Current setup
+    /iwin judgement <judgementName>          Setup for Judgement on elites and worldbosses
+    /iwin soc <socOption>                    Setup for Seal of Command
 
 judgementName possible values: wisdom, light, crusader, off.
 
 socOption possible values: auto, on, off.
 
-Example: /iwinpaladin judgement wisdom
-=> Will setup wisdom as the default judgement for all roles.
+Example: /iwin judgement wisdom
+=> Will setup wisdom as the default judgement.
 
 ## Required Mods & Addons
 

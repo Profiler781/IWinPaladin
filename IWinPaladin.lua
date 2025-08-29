@@ -10,11 +10,12 @@ if UnitClass("player") ~= "Paladin" then return end
 ---- Loading ----
 IWin = CreateFrame("frame",nil,UIParent)
 IWin.t = CreateFrame("GameTooltip", "IWin_T", UIParent, "GameTooltipTemplate")
-local IWin_CombatVar = {
+IWin_CombatVar = {
 	["gcd"] = 0,
 	["weaponAttackSpeed"] = 0,
 }
 local Cast = CastSpellByName
+IWin.hasPallyPower = PallyPower_SealAssignments and true or false
 
 ---- Event Register ----
 IWin:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN")
@@ -203,7 +204,7 @@ function IWin:GetTimeToDie()
 	if UnitInRaid("player") then
 		ttd = 999
 	elseif GetNumPartyMembers ~= 0 then
-		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Settings["playerToNPCHealthRatio"] * IWin_Settings["outOfRaidCombatLength"] / GetNumPartyMembers()
+		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Settings["playerToNPCHealthRatio"] * IWin_Settings["outOfRaidCombatLength"] / GetNumPartyMembers() * 2
 	else
 		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Settings["playerToNPCHealthRatio"] * IWin_Settings["outOfRaidCombatLength"]
 	end
@@ -417,6 +418,7 @@ end
 function IWin:Consecration()
 	if IWin:IsSpellLearnt("Consecration")
 		and IWin:GetManaPercent("player") > 50
+		and IWin:IsInRange("Judgement")
 		and not IWin:IsOnCooldown("Consecration") then
 			Cast("Consecration")
 	end
@@ -670,6 +672,15 @@ function IWin:SealOfLightElite()
 	end
 end
 
+function IWin:SealOfLightSolo()
+	if IWin:IsSpellLearnt("Seal of Light")
+		and not IWin:IsSealActive()
+		and GetNumPartyMembers() == 0
+		and IWin:IsBuffActive("target","Judgement of Wisdom") then 
+			Cast("Seal of Light")
+	end
+end
+
 function IWin:SealOfRighteousness()
 	if IWin:IsSpellLearnt("Seal of Righteousness")
 		and IWin:GetManaPercent("player") > 15
@@ -748,6 +759,13 @@ function IWin:SealOfWisdomElite()
 	end
 end
 
+function IWin:SealOfWisdomEco()
+	if IWin:IsSpellLearnt("Seal of Wisdom")
+		and not IWin:IsSealActive() then 
+			Cast("Seal of Wisdom")
+	end
+end
+
 ---- idebug button ----
 SLASH_IDEBUG1 = '/idebug'
 function SlashCmdList.IDEBUG()
@@ -755,9 +773,9 @@ function SlashCmdList.IDEBUG()
 	
 end
 
----- Judgement management ----
-SLASH_IWINPALADIN1 = "/iwinpaladin"
-function SlashCmdList.IWINPALADIN(command)
+---- commands ----
+SLASH_IWIN1 = "/iwin"
+function SlashCmdList.IWIN(command)
 	if not command then return end
 	local arguments = {}
 	for token in string.gfind(command, "%S+") do
@@ -792,13 +810,13 @@ function SlashCmdList.IWINPALADIN(command)
 	    DEFAULT_CHAT_FRAME:AddMessage("Seal of Command: " .. IWin_Settings["soc"])
 	else
 		DEFAULT_CHAT_FRAME:AddMessage("Usage:")
-		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin : Current setup")
+		DEFAULT_CHAT_FRAME:AddMessage(" /iwin : Current setup")
 		if IWin.hasPallyPower then
 			DEFAULT_CHAT_FRAME:AddMessage("Judgements managed by PallyPowerTW")
 		else
-			DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin judgement [" .. IWin_Settings["judgement"] .. "] : Setup for Judgement")
+			DEFAULT_CHAT_FRAME:AddMessage(" /iwin judgement [" .. IWin_Settings["judgement"] .. "] : Setup for Judgement on elites and worldbosses")
 		end
-		DEFAULT_CHAT_FRAME:AddMessage(" /iwinpaladin soc [" .. IWin_Settings["soc"] .. "] : Setup for Seal of Command")
+		DEFAULT_CHAT_FRAME:AddMessage(" /iwin soc [" .. IWin_Settings["soc"] .. "] : Setup for Seal of Command")
     end
 end
 
@@ -877,7 +895,6 @@ function SlashCmdList.ITANK()
 	IWin:SealOfTheCrusaderElite()
 	IWin:SealOfCommand()
 	IWin:SealOfRighteousness()
-	IWin:HammerOfWrath()
 	IWin:ExorcismRanged()
 	IWin:JudgementRanged()
 	IWin:HolyStrike()
@@ -885,6 +902,56 @@ function SlashCmdList.ITANK()
 	IWin:Exorcism()
 	IWin:Judgement()
 	IWin:RepentanceRaid()
+	IWin:StartAttack()
+end
+
+---- ihodor button ----
+SLASH_IHODOR1 = '/ihodor'
+function SlashCmdList.IHODOR()
+	IWin:TargetEnemy()
+	IWin:MarkSkull()
+	IWin:BlessingOfSanctuary()
+	IWin:BlessingOfWisdom()
+	IWin:BlessingOfMight()
+	IWin:BlessingOfKings()
+	IWin:BlessingOfLight()
+	IWin:BlessingOfSalvation()
+	IWin:Consecration()
+	IWin:HolyShield()
+	IWin:SealOfWisdom()
+	IWin:SealOfWisdomElite()
+	IWin:SealOfLightElite()
+	IWin:SealOfTheCrusaderElite()
+	IWin:SealOfLightSolo()
+	IWin:SealOfWisdomEco()
+	IWin:ExorcismRanged()
+	IWin:JudgementRanged()
+	IWin:HolyStrike()
+	IWin:Exorcism()
+	IWin:Judgement()
+	IWin:RepentanceRaid()
+	IWin:StartAttack()
+end
+
+---- ieco button ----
+SLASH_IECO1 = '/ieco'
+function SlashCmdList.IECO()
+	IWin:TargetEnemy()
+	IWin:MarkSkull()
+	IWin:BlessingOfSanctuary()
+	IWin:BlessingOfWisdom()
+	IWin:BlessingOfMight()
+	IWin:BlessingOfKings()
+	IWin:BlessingOfLight()
+	IWin:BlessingOfSalvation()
+	IWin:SealOfWisdom()
+	IWin:SealOfWisdomElite()
+	IWin:SealOfLightElite()
+	IWin:SealOfTheCrusaderElite()
+	IWin:SealOfWisdomEco()
+	IWin:JudgementRanged()
+	IWin:HolyStrike()
+	IWin:Judgement()
 	IWin:StartAttack()
 end
 

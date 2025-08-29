@@ -3,6 +3,6 @@
 ## Notes: Smart macros for turtle paladins
 ## Version: 1.3
 ## SavedVariablesPerCharacter: IWin_Settings
-## OptionalDeps: ShaguTweaks, pfUI
+## OptionalDeps: ShaguTweaks, pfUI, PallyPowerTW
 
 IWinPaladin.lua
