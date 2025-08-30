@@ -6,8 +6,8 @@ Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on
 
     /idps           Single target DPS rotation
     /icleave        Multi target DPS rotation
-    /itank          Single target threat rotation
-    /ihodor         Multi target threat rotation
+    /itank          Single target Prot rotation
+    /ihodor         Multi target Prot rotation
     /ieco           Mana regeneration rotation
     /ijudge         Seal and Judgement only
     /ichase         Stick to your target with Judgement of Justice and Hand of Freedom
