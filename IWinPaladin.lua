@@ -198,7 +198,7 @@ end
 
 function IWin:GetTimeToDie()
 	local ttd = 0
-	if UnitInRaid("player") then
+	if UnitInRaid("player") or UnitIsPVP("target") then
 		ttd = 999
 	elseif GetNumPartyMembers ~= 0 then
 		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Paladin["playerToNPCHealthRatio"] * IWin_Paladin["outOfRaidCombatLength"] / GetNumPartyMembers() * 2
