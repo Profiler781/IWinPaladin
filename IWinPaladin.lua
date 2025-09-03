@@ -24,7 +24,7 @@ IWin:RegisterEvent("UNIT_INVENTORY_CHANGED")
 IWin:SetScript("OnEvent", function()
 	if event == "ADDON_LOADED" and arg1 == "IWinPaladin" then
 		DEFAULT_CHAT_FRAME:AddMessage("|cff0066ff IWinPaladin system loaded.|r")
-		IWin_Paladin = {}
+		if IWin_Paladin == nil then IWin_Paladin = {} end
 		if IWin_Paladin["judgement"] == nil then IWin_Paladin["judgement"] = "wisdom" end
 		if IWin_Paladin["soc"] == nil then IWin_Paladin["soc"] = "auto" end
 		if IWin_Paladin["outOfRaidCombatLength"] == nil then IWin_Paladin["outOfRaidCombatLength"] = 25 end
