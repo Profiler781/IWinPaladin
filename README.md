@@ -2,6 +2,8 @@
 
 Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on your action bars. Enjoy!
 
+Discord: Agamemnoth#5566
+
 ## Commands
 
     /idps           Single target DPS rotation
@@ -14,6 +16,7 @@ Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on
     /istun          Stun with Hammer of Justice or Repentance
     /itaunt         Hand of Reckoning if the target is not under another taunt effect
     /ibubblehearth  Divine Shield and Hearthstone. Shame!
+    /ihydrate       Use conjured or vendor water
 
 ## Setup commands
 

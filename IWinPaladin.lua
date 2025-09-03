@@ -24,14 +24,11 @@ IWin:RegisterEvent("UNIT_INVENTORY_CHANGED")
 IWin:SetScript("OnEvent", function()
 	if event == "ADDON_LOADED" and arg1 == "IWinPaladin" then
 		DEFAULT_CHAT_FRAME:AddMessage("|cff0066ff IWinPaladin system loaded.|r")
-		if IWin_Settings == nil then
-			IWin_Settings = {
-				["judgement"] = "wisdom",
-				["soc"] = "auto",
-				["outOfRaidCombatLength"] = 25,
-				["playerToNPCHealthRatio"] = 0.75,
-			}
-		end
+		IWin_Paladin = {}
+		if IWin_Paladin["judgement"] == nil then IWin_Paladin["judgement"] = "wisdom" end
+		if IWin_Paladin["soc"] == nil then IWin_Paladin["soc"] = "auto" end
+		if IWin_Paladin["outOfRaidCombatLength"] == nil then IWin_Paladin["outOfRaidCombatLength"] = 25 end
+		if IWin_Paladin["playerToNPCHealthRatio"] == nil then IWin_Paladin["playerToNPCHealthRatio"] = 0.75 end
 		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player")
 		IWin.hasSuperwow = SetAutoloot and true or false
 		--IWin:UnregisterEvent("ADDON_LOADED")
@@ -204,9 +201,9 @@ function IWin:GetTimeToDie()
 	if UnitInRaid("player") then
 		ttd = 999
 	elseif GetNumPartyMembers ~= 0 then
-		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Settings["playerToNPCHealthRatio"] * IWin_Settings["outOfRaidCombatLength"] / GetNumPartyMembers() * 2
+		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Paladin["playerToNPCHealthRatio"] * IWin_Paladin["outOfRaidCombatLength"] / GetNumPartyMembers() * 2
 	else
-		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Settings["playerToNPCHealthRatio"] * IWin_Settings["outOfRaidCombatLength"]
+		ttd = UnitHealth("target") / UnitHealthMax("player") * IWin_Paladin["playerToNPCHealthRatio"] * IWin_Paladin["outOfRaidCombatLength"]
 	end
 	return ttd
 end
@@ -293,13 +290,26 @@ function IWin:IsJudgementOverwrite(judgement, seal)
 	return IWin:IsBuffActive("target",judgement) and IWin:IsBuffActive("player",seal)
 end
 
+function IWin:IsJudgementActive()
+	return IWin:IsBuffActive("target","Judgement of Wisdom")
+		or IWin:IsBuffActive("target","Judgement of Light")
+		or IWin:IsBuffActive("target","Judgement of Justice")
+		or IWin:IsBuffActive("target","Judgement of the Crusader")
+end
+
 function IWin:IsBlessingActive()
 	return IWin:IsBuffActive("player","Blessing of Sanctuary")
+		or IWin:IsBuffActive("player","Greater Blessing of Sanctuary")
 		or IWin:IsBuffActive("player","Blessing of Might")
+		or IWin:IsBuffActive("player","Greater Blessing of Might")
 		or IWin:IsBuffActive("player","Blessing of Wisdom")
+		or IWin:IsBuffActive("player","Greater Blessing of Wisdom")
 		or IWin:IsBuffActive("player","Blessing of Light")
+		or IWin:IsBuffActive("player","Greater Blessing of Light")
 		or IWin:IsBuffActive("player","Blessing of Kings")
+		or IWin:IsBuffActive("player","Greater Blessing of Kings")
 		or IWin:IsBuffActive("player","Blessing of Salvation")
+		or IWin:IsBuffActive("player","Greater Blessing of Salvation")
 end
 
 ---- General Actions ----
@@ -334,10 +344,29 @@ function IWin:MarkSkull()
 	end
 end
 
+function IWin:UseItem(item)
+	for bag = 0, 4 do
+		for slot = 1, GetContainerNumSlots(bag) do
+			local itemName = GetContainerItemLink(bag, slot)
+			if itemName and strfind(itemName,item) then
+				UseContainerItem(bag, slot)
+			end
+		end
+	end
+end
+
+function IWin:UseItemBuff(item, buff)
+	if not IWin:IsBuffActive("player", buff) then
+		IWin:UseItem(item)
+	end
+end
+
 ---- Class Actions ----
 function IWin:BlessingOfKings()
 	if IWin:IsSpellLearnt("Blessing of Kings")
 		and not IWin:IsBuffActive("player","Blessing of Kings")
+		and not IWin:IsBuffActive("player","Greater Blessing of Kings")
+		and GetNumPartyMembers() == 0
 		and IWin.hasPallyPower
 		and PallyPower_Assignments[UnitName("player")][4] == 4 then
 			Cast("Blessing of Kings")
@@ -347,6 +376,8 @@ end
 function IWin:BlessingOfLight()
 	if IWin:IsSpellLearnt("Blessing of Light")
 		and not IWin:IsBuffActive("player","Blessing of Light")
+		and not IWin:IsBuffActive("player","Greater Blessing of Light")
+		and GetNumPartyMembers() == 0
 		and IWin.hasPallyPower
 		and PallyPower_Assignments[UnitName("player")][4] == 3 then
 			Cast("Blessing of Light")
@@ -355,6 +386,7 @@ end
 
 function IWin:BlessingOfMight()
 	if IWin:IsSpellLearnt("Blessing of Might")
+		and GetNumPartyMembers() == 0
 		and (
 				(
 					not IWin.hasPallyPower
@@ -364,6 +396,7 @@ function IWin:BlessingOfMight()
 					IWin.hasPallyPower
 					and PallyPower_Assignments[UnitName("player")][4] == 1
 					and not IWin:IsBuffActive("player","Blessing of Might")
+					and not IWin:IsBuffActive("player","Greater Blessing of Might")
 				)
 			) then
 			Cast("Blessing of Might")
@@ -373,6 +406,8 @@ end
 function IWin:BlessingOfSalvation()
 	if IWin:IsSpellLearnt("Blessing of Salvation")
 		and not IWin:IsBuffActive("player","Blessing of Salvation")
+		and not IWin:IsBuffActive("player","Greater Blessing of Salvation")
+		and GetNumPartyMembers() == 0
 		and IWin.hasPallyPower
 		and PallyPower_Assignments[UnitName("player")][4] == 2 then
 			Cast("Blessing of Salvation")
@@ -382,6 +417,8 @@ end
 function IWin:BlessingOfSanctuary()
 	if IWin:IsSpellLearnt("Blessing of Sanctuary")
 		and not IWin:IsBuffActive("player","Blessing of Sanctuary")
+		and not IWin:IsBuffActive("player","Greater Blessing of Sanctuary")
+		and GetNumPartyMembers() == 0
 		and (
 				not IWin.hasPallyPower
 				or PallyPower_Assignments[UnitName("player")][4] == 5
@@ -392,6 +429,7 @@ end
 
 function IWin:BlessingOfWisdom()
 	if IWin:IsSpellLearnt("Blessing of Wisdom")
+		and GetNumPartyMembers() == 0
 		and (
 				(
 					not IWin.hasPallyPower
@@ -401,6 +439,7 @@ function IWin:BlessingOfWisdom()
 					IWin.hasPallyPower
 					and PallyPower_Assignments[UnitName("player")][4] == 0
 					and not IWin:IsBuffActive("player","Blessing of Wisdom")
+					and not IWin:IsBuffActive("player","Greater Blessing of Wisdom")
 				)
 			) then
 			Cast("Blessing of Wisdom")
@@ -506,17 +545,6 @@ function IWin:HandOfReckoning()
 	end
 end
 
-function IWin:Hearthstone()
-	for bag = 0, 4 do
-		for slot = 1, GetContainerNumSlots(bag) do
-			local itemName = GetContainerItemLink(bag, slot)
-			if itemName and strfind(itemName,"Hearthstone") then
-				UseContainerItem(bag, slot)
-			end
-		end
-	end
-end
-
 function IWin:HolyShield()
 	if IWin:IsSpellLearnt("Holy Shield")
 		and not IWin:IsOnCooldown("Holy Shield")
@@ -526,6 +554,15 @@ function IWin:HolyShield()
 				or IWin:IsTanking()
 			) then
 			Cast("Holy Shield")
+	end
+end
+
+function IWin:HolyShock()
+	if IWin:IsSpellLearnt("Holy Shock")
+		and not IWin:IsOnCooldown("Holy Shock")
+		and IWin:GetHealthPercent("player") < 80
+		and IWin:GetManaPercent("player") > 25 then
+			Cast("Holy Shock","player")
 	end
 end
 
@@ -570,6 +607,11 @@ function IWin:Judgement()
 				or IWin:GetBuffRemaining("player","Seal of Command") < 5
 				or IWin:GetManaPercent("player") > 50
 			)
+		and not (
+					IWin:IsJudgementActive()
+					and IWin:IsBuffActive("player","Seal of Light")
+					and GetNumPartyMembers() == 0
+				)
 		and not IWin:IsGCDActive() then
 			Cast("Judgement")
 	end
@@ -630,9 +672,9 @@ function IWin:SealOfCommand()
 		and (
 				(
 					IWin_CombatVar["weaponAttackSpeed"] > 3.49
-					and IWin_Settings["soc"] == "auto"
+					and IWin_Paladin["soc"] == "auto"
 				)
-				or IWin_Settings["soc"] == "on"
+				or IWin_Paladin["soc"] == "on"
 			)
 		and (
 				not IWin:IsSealActive()
@@ -666,7 +708,7 @@ function IWin:SealOfLightElite()
 				and PallyPower_SealAssignments[UnitName("player")] == 2
 			) or (
 				not IWin.hasPallyPower
-				and IWin_Settings["judgement"] == "light"
+				and IWin_Paladin["judgement"] == "light"
 			)) then
 				Cast("Seal of Light")
 	end
@@ -712,7 +754,7 @@ function IWin:SealOfTheCrusaderElite()
 				and PallyPower_SealAssignments[UnitName("player")] == 1
 			) or (
 				not IWin.hasPallyPower
-				and IWin_Settings["judgement"] == "crusader"
+				and IWin_Paladin["judgement"] == "crusader"
 			)) then
 				Cast("Seal of the Crusader")
 	end
@@ -753,7 +795,7 @@ function IWin:SealOfWisdomElite()
 				and PallyPower_SealAssignments[UnitName("player")] == 0
 			) or (
 				not IWin.hasPallyPower
-				and IWin_Settings["judgement"] == "wisdom"
+				and IWin_Paladin["judgement"] == "wisdom"
 			)) then
 				Cast("Seal of Wisdom")
 	end
@@ -803,20 +845,20 @@ function SlashCmdList.IWIN(command)
 		end
 	end
     if arguments[1] == "judgement" then
-        IWin_Settings["judgement"] = arguments[2]
-	    DEFAULT_CHAT_FRAME:AddMessage("Judgement: " .. IWin_Settings["judgement"])
+        IWin_Paladin["judgement"] = arguments[2]
+	    DEFAULT_CHAT_FRAME:AddMessage("Judgement: " .. IWin_Paladin["judgement"])
 	elseif arguments[1] == "soc" then
-	    IWin_Settings["soc"] = arguments[2]
-	    DEFAULT_CHAT_FRAME:AddMessage("Seal of Command: " .. IWin_Settings["soc"])
+	    IWin_Paladin["soc"] = arguments[2]
+	    DEFAULT_CHAT_FRAME:AddMessage("Seal of Command: " .. IWin_Paladin["soc"])
 	else
 		DEFAULT_CHAT_FRAME:AddMessage("Usage:")
 		DEFAULT_CHAT_FRAME:AddMessage(" /iwin : Current setup")
 		if IWin.hasPallyPower then
 			DEFAULT_CHAT_FRAME:AddMessage("Judgements managed by PallyPowerTW")
 		else
-			DEFAULT_CHAT_FRAME:AddMessage(" /iwin judgement [" .. IWin_Settings["judgement"] .. "] : Setup for Judgement on elites and worldbosses")
+			DEFAULT_CHAT_FRAME:AddMessage(" /iwin judgement [" .. IWin_Paladin["judgement"] .. "] : Setup for Judgement on elites and worldbosses")
 		end
-		DEFAULT_CHAT_FRAME:AddMessage(" /iwin soc [" .. IWin_Settings["soc"] .. "] : Setup for Seal of Command")
+		DEFAULT_CHAT_FRAME:AddMessage(" /iwin soc [" .. IWin_Paladin["soc"] .. "] : Setup for Seal of Command")
     end
 end
 
@@ -893,6 +935,7 @@ function SlashCmdList.ITANK()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
 	IWin:SealOfTheCrusaderElite()
+	IWin:SealOfLightSolo()
 	IWin:SealOfCommand()
 	IWin:SealOfRighteousness()
 	IWin:ExorcismRanged()
@@ -901,6 +944,7 @@ function SlashCmdList.ITANK()
 	IWin:Consecration()
 	IWin:Exorcism()
 	IWin:Judgement()
+	IWin:HolyShock()
 	IWin:RepentanceRaid()
 	IWin:StartAttack()
 end
@@ -918,6 +962,7 @@ function SlashCmdList.IHODOR()
 	IWin:BlessingOfSalvation()
 	IWin:Consecration()
 	IWin:HolyShield()
+	IWin:HolyShock()
 	IWin:SealOfWisdom()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
@@ -1001,5 +1046,13 @@ end
 SLASH_IBUBBLEHEARTH1 = '/ibubblehearth'
 function SlashCmdList.IBUBBLEHEARTH()
 	IWin:DivineShield()
-	IWin:Hearthstone()
+	IWin:UseItem("Hearthstone")
+end
+
+---- ihydrate button ----
+SLASH_IHYDRATE1 = '/ihydrate'
+function SlashCmdList.IHYDRATE()
+	IWin:UseItemBuff("Conjured Crystal Water", "Drink")
+	IWin:UseItemBuff("Conjured Sparkling Water", "Drink")
+	IWin:UseItemBuff("Morning Glory Dew", "Drink")
 end
