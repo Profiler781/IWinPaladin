@@ -51,6 +51,37 @@ IWin_Taunt = {
 	"Hand of Reckoning",
 }
 
+IWin_DrinkVendor = {
+	["Kaja'Cola"] = 1,
+	["Refreshing Spring Water"] = 1,
+	["Sun-Parched Waterskin"] = 1,
+	["Blended Bean Brew"] = 5,
+	["Ice Cold Milk"] = 5,
+	["Bubbling Water"] = 15,
+	["Fizzy Faire Drink"] = 15,
+	["Melon Juice"] = 15,
+	["Enchanted Water"] = 25,
+	["Goldthorn Tea"] = 25,
+	["Green Garden Tea"] = 25,
+	["Sweet Nectar"] = 25,
+	[""] = 1,
+}
+
+IWin_DrinkConjured = {
+	["Conjured Water"] = 1,
+	["Conjured Fresh Water"] = 5,
+	["Conjured Purified Water"] = 15,
+	["Conjured Spring Water"] = 25,
+	[""] = 1,
+	[""] = 1,
+	[""] = 1,
+	[""] = 1,
+	[""] = 1,
+	[""] = 1,
+	[""] = 1,
+	[""] = 1,
+}
+
 ---- Functions ----
 function IWin:GetBuffIndex(unit, spell)
 	if unit == "player" then
@@ -225,7 +256,8 @@ function IWin:IsManaAvailable(spell)
 end
 
 function IWin:IsInRange(spell)
-	if not IsSpellInRange then
+	if not IsSpellInRange
+		or not IWin:IsSpellLearnt(spell) then
         return CheckInteractDistance("target", 3) ~= nil
 	else
 		return IsSpellInRange(spell, "target") == 1
