@@ -52,35 +52,39 @@ IWin_Taunt = {
 }
 
 IWin_DrinkVendor = {
-	["Kaja'Cola"] = 1,
-	["Refreshing Spring Water"] = 1,
-	["Sun-Parched Waterskin"] = 1,
-	["Blended Bean Brew"] = 5,
-	["Ice Cold Milk"] = 5,
-	["Bubbling Water"] = 15,
-	["Fizzy Faire Drink"] = 15,
-	["Melon Juice"] = 15,
+	["Hyjal Nectar"] = 55,
+	["Morning Glory Dew"] = 45,
+	["Freshly-Squeezed Lemonade"] = 45,
+	["Bottled Winterspring Water"] = 35,
+	["Moonberry Juice"] = 35,
 	["Enchanted Water"] = 25,
 	["Goldthorn Tea"] = 25,
 	["Green Garden Tea"] = 25,
 	["Sweet Nectar"] = 25,
-	[""] = 1,
+	["Bubbling Water"] = 15,
+	["Fizzy Faire Drink"] = 15,
+	["Melon Juice"] = 15,
+	["Blended Bean Brew"] = 5,
+	["Ice Cold Milk"] = 5,
+	["Kaja'Cola"] = 1,
+	["Refreshing Spring Water"] = 1,
+	["Sun-Parched Waterskin"] = 1,
 }
 
 IWin_DrinkConjured = {
-	["Conjured Water"] = 1,
-	["Conjured Fresh Water"] = 5,
-	["Conjured Purified Water"] = 15,
+	["Conjured Crystal Water"] = 55,
+	["Conjured Sparkling Water"] = 45,
+	["Conjured Mineral Water"] = 35,
 	["Conjured Spring Water"] = 25,
-	[""] = 1,
-	[""] = 1,
-	[""] = 1,
-	[""] = 1,
-	[""] = 1,
-	[""] = 1,
-	[""] = 1,
-	[""] = 1,
+	["Conjured Purified Water"] = 15,
+	["Conjured Fresh Water"] = 5,
+	["Conjured Water"] = 1,
 }
+
+function IWin:GetTalentRank(tabIndex, talentIndex)
+	local _, _, _, _, currentRank = GetTalentInfo(tabIndex, talentIndex)
+	return currentRank
+end
 
 ---- Functions ----
 function IWin:GetBuffIndex(unit, spell)
@@ -257,8 +261,9 @@ end
 
 function IWin:IsInRange(spell)
 	if not IsSpellInRange
+		or not spell
 		or not IWin:IsSpellLearnt(spell) then
-        return CheckInteractDistance("target", 3) ~= nil
+        	return CheckInteractDistance("target", 3) ~= nil
 	else
 		return IsSpellInRange(spell, "target") == 1
 	end
@@ -393,6 +398,22 @@ function IWin:UseItemBuff(item, buff)
 	end
 end
 
+function IWin:UseDrinkItem()
+	local playerLevel = UnitLevel("player")
+	for drinkItem in IWin_DrinkConjured do
+		if IWin:IsBuffActive("player", "Drink") then break end
+		if playerLevel >= IWin_DrinkConjured[drinkItem] then
+			IWin:UseItem(drinkItem)
+		end
+	end
+	for drinkItem in IWin_DrinkVendor do
+		if IWin:IsBuffActive("player", "Drink") then break end
+		if playerLevel >= IWin_DrinkVendor[drinkItem] then
+			IWin:UseItem(drinkItem)
+		end
+	end
+end
+
 ---- Class Actions ----
 function IWin:BlessingOfKings()
 	if IWin:IsSpellLearnt("Blessing of Kings")
@@ -499,7 +520,10 @@ function IWin:CrusaderStrike()
 	if IWin:IsSpellLearnt("Crusader Strike")
 		and not IWin:IsOnCooldown("Crusader Strike")
 		and IWin:GetManaPercent("player") > 15
-		and IWin:GetBuffRemaining("player","Zeal") < 13 then
+		and (
+				IWin:GetBuffRemaining("player","Zeal") < 13
+				or IWin:GetManaPercent("player") > 80
+			) then
 			Cast("Crusader Strike")
 	end
 end
@@ -555,7 +579,12 @@ function IWin:HammerOfWrath()
 				)
 				or UnitIsPVP("target")
 			)
-		and IWin:IsExecutePhase() then
+		and IWin:IsExecutePhase()
+		and (
+				not st_timer
+				or st_timer > UnitAttackSpeed("player") * 0.9
+				or st_timer > 1
+			) then
 			Cast("Hammer of Wrath")
 	end
 end
@@ -601,6 +630,15 @@ end
 function IWin:HolyStrike()
 	if IWin:IsSpellLearnt("Holy Strike")
 		and not IWin:IsOnCooldown("Holy Strike") then
+			Cast("Holy Strike")
+	end
+end
+
+function IWin:HolyStrikeHolyMight()
+	if IWin:IsSpellLearnt("Holy Strike")
+		and not IWin:IsOnCooldown("Holy Strike")
+		and IWin:GetBuffRemaining("player","Holy Might") < 7
+		and IWin:GetTalentRank(3 ,15) then
 			Cast("Holy Strike")
 	end
 end
@@ -801,9 +839,11 @@ function IWin:SealOfWisdom()
 						IWin:GetManaPercent("player") < 70
 						and not IWin:IsBuffActive("target","Judgement of Wisdom")
 						and IWin:GetTimeToDie() > 20
+						and not IWin:IsElite()
 					)
 				or (
 						GetNumPartyMembers() == 0
+						and not IWin:IsElite()
 						and not UnitAffectingCombat("player")
 					)
 			) then 
@@ -914,6 +954,7 @@ function SlashCmdList.IDPS()
 	IWin:HammerOfWrath()
 	IWin:ExorcismRanged()
 	IWin:JudgementRanged()
+	IWin:HolyStrikeHolyMight()
 	IWin:CrusaderStrike()
 	IWin:HolyStrike()
 	IWin:Exorcism()
@@ -941,7 +982,6 @@ function SlashCmdList.ICLEAVE()
 	IWin:SealOfCommand()
 	IWin:SealOfRighteousness()
 	IWin:Consecration()
-	IWin:HammerOfWrath()
 	IWin:HolyWrath()
 	IWin:JudgementRanged()
 	IWin:CrusaderStrike()
@@ -999,7 +1039,6 @@ function SlashCmdList.IHODOR()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
 	IWin:SealOfTheCrusaderElite()
-	IWin:SealOfLightSolo()
 	IWin:SealOfWisdomEco()
 	IWin:ExorcismRanged()
 	IWin:JudgementRanged()
@@ -1027,6 +1066,7 @@ function SlashCmdList.IECO()
 	IWin:SealOfTheCrusaderElite()
 	IWin:SealOfWisdomEco()
 	IWin:JudgementRanged()
+	IWin:HolyShield()
 	IWin:HolyStrike()
 	IWin:Judgement()
 	IWin:StartAttack()
@@ -1084,7 +1124,5 @@ end
 ---- ihydrate button ----
 SLASH_IHYDRATE1 = '/ihydrate'
 function SlashCmdList.IHYDRATE()
-	IWin:UseItemBuff("Conjured Crystal Water", "Drink")
-	IWin:UseItemBuff("Conjured Sparkling Water", "Drink")
-	IWin:UseItemBuff("Morning Glory Dew", "Drink")
+	IWin:UseDrinkItem()
 end

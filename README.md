@@ -34,10 +34,10 @@ Example: /iwin judgement wisdom
 ## Required Mods & Addons
 
 Mandatory Mods:
-* [SuperWoW](https://github.com/balakethelock/SuperWoW/), A mod made for fixing client bugs and expanding the lua-based API used by user interface addons.
+* [SuperWoW](https://github.com/balakethelock/SuperWoW/), A mod made for fixing client bugs and expanding the lua-based API used by user interface addons. Used for debuff tracking.
 
 Optionnal Mods:
-* [Nampower](https://github.com/pepopo978/nampower/), A mod made to dramatically increase cast efficiency on the 1.12.1 client.
+* [Nampower](https://github.com/pepopo978/nampower/), A mod made to dramatically increase cast efficiency on the 1.12.1 client. Used for range checks.
 
 You need one of the following addons:
 * [pfUI](https://shagu.org/pfUI/), A full UI replacement.
@@ -45,3 +45,4 @@ You need one of the following addons:
 
 Optionnal Addons:
 * [PallyPowerTW](https://github.com/ivanovlk/PallyPowerTW/), An addon for paladin blessings, auras and judgements assignements.
+* [SP_SwingTimer](https://github.com/Profiler781/SP_SwingTimer), An auto attack swing timer. Used for Hammer of Wrath.
