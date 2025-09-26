@@ -13,6 +13,7 @@ IWin.t = CreateFrame("GameTooltip", "IWin_T", UIParent, "GameTooltipTemplate")
 IWin_CombatVar = {
 	["gcd"] = 0,
 	["weaponAttackSpeed"] = 0,
+	["queueGCD"] = true,
 }
 local Cast = CastSpellByName
 IWin.hasPallyPower = PallyPower_SealAssignments and true or false
@@ -334,6 +335,16 @@ function IWin:IsJudgementActive()
 		or IWin:IsBuffActive("target","Judgement of the Crusader")
 end
 
+function IWin:IsAuraActive()
+	return IWin:IsStanceActive("Devotion Aura")
+		or IWin:IsStanceActive("Retribution Aura")
+		or IWin:IsStanceActive("Concentration Aura")
+		or IWin:IsStanceActive("Shadow Resistance Aura")
+		or IWin:IsStanceActive("Frost Resistance Aura")
+		or IWin:IsStanceActive("Fire Resistance Aura")
+		or IWin:IsStanceActive("Sanctity Aura")
+end
+
 function IWin:IsBlessingActive()
 	return IWin:IsBuffActive("player","Blessing of Sanctuary")
 		or IWin:IsBuffActive("player","Greater Blessing of Sanctuary")
@@ -381,6 +392,18 @@ function IWin:MarkSkull()
 	end
 end
 
+function IWin:CancelPlayerBuff(spell)
+	local index = IWin:GetBuffIndex("player", spell)
+	if index then
+		CancelPlayerBuff(index)
+	end
+end
+
+function IWin:CancelSalvation()
+	IWin:CancelPlayerBuff("Blessing of Salvation")
+	IWin:CancelPlayerBuff("Greater Blessing of Salvation")
+end
+
 function IWin:UseItem(item)
 	for bag = 0, 4 do
 		for slot = 1, GetContainerNumSlots(bag) do
@@ -417,28 +440,33 @@ end
 ---- Class Actions ----
 function IWin:BlessingOfKings()
 	if IWin:IsSpellLearnt("Blessing of Kings")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsBuffActive("player","Blessing of Kings")
 		and not IWin:IsBuffActive("player","Greater Blessing of Kings")
 		and GetNumPartyMembers() == 0
 		and IWin.hasPallyPower
 		and PallyPower_Assignments[UnitName("player")][4] == 4 then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Blessing of Kings")
 	end
 end
 
 function IWin:BlessingOfLight()
 	if IWin:IsSpellLearnt("Blessing of Light")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsBuffActive("player","Blessing of Light")
 		and not IWin:IsBuffActive("player","Greater Blessing of Light")
 		and GetNumPartyMembers() == 0
 		and IWin.hasPallyPower
 		and PallyPower_Assignments[UnitName("player")][4] == 3 then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Blessing of Light")
 	end
 end
 
 function IWin:BlessingOfMight()
 	if IWin:IsSpellLearnt("Blessing of Might")
+		and IWin_CombatVar["queueGCD"]
 		and GetNumPartyMembers() == 0
 		and (
 				(
@@ -452,23 +480,27 @@ function IWin:BlessingOfMight()
 					and not IWin:IsBuffActive("player","Greater Blessing of Might")
 				)
 			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Blessing of Might")
 	end
 end
 
 function IWin:BlessingOfSalvation()
 	if IWin:IsSpellLearnt("Blessing of Salvation")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsBuffActive("player","Blessing of Salvation")
 		and not IWin:IsBuffActive("player","Greater Blessing of Salvation")
 		and GetNumPartyMembers() == 0
 		and IWin.hasPallyPower
 		and PallyPower_Assignments[UnitName("player")][4] == 2 then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Blessing of Salvation")
 	end
 end
 
 function IWin:BlessingOfSanctuary()
 	if IWin:IsSpellLearnt("Blessing of Sanctuary")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsBuffActive("player","Blessing of Sanctuary")
 		and not IWin:IsBuffActive("player","Greater Blessing of Sanctuary")
 		and GetNumPartyMembers() == 0
@@ -476,12 +508,14 @@ function IWin:BlessingOfSanctuary()
 				not IWin.hasPallyPower
 				or PallyPower_Assignments[UnitName("player")][4] == 5
 			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Blessing of Sanctuary")
 	end
 end
 
 function IWin:BlessingOfWisdom()
 	if IWin:IsSpellLearnt("Blessing of Wisdom")
+		and IWin_CombatVar["queueGCD"]
 		and GetNumPartyMembers() == 0
 		and (
 				(
@@ -495,87 +529,146 @@ function IWin:BlessingOfWisdom()
 					and not IWin:IsBuffActive("player","Greater Blessing of Wisdom")
 				)
 			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Blessing of Wisdom")
 	end
 end
 
 function IWin:Cleanse()
 	if IWin:IsSpellLearnt("Cleanse")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Cleanse")
 		and not HasFullControl() then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Cleanse")
 	end
 end
 
-function IWin:Consecration()
+function IWin:ConcentrationAura()
+	if IWin:IsSpellLearnt("Concentration Aura")
+		and IWin_CombatVar["queueGCD"]
+		and not IWin:IsAuraActive()
+		and IWin.hasPallyPower
+		and PallyPower_AuraAssignments[UnitName("player")] == 2 then
+			IWin_CombatVar["queueGCD"] = false
+			Cast("Concentration Aura")
+	end
+end
+
+function IWin:Consecration(manaPercent)
 	if IWin:IsSpellLearnt("Consecration")
-		and IWin:GetManaPercent("player") > 50
-		and IWin:IsInRange("Judgement")
+		and IWin_CombatVar["queueGCD"]
+		and IWin:GetManaPercent("player") > manaPercent
 		and not IWin:IsOnCooldown("Consecration") then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Consecration")
 	end
 end
 
-function IWin:CrusaderStrike()
+function IWin:CrusaderStrike(manaPercent)
 	if IWin:IsSpellLearnt("Crusader Strike")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Crusader Strike")
-		and IWin:GetManaPercent("player") > 15
+		and IWin:GetManaPercent("player") > manaPercent
 		and (
 				IWin:GetBuffRemaining("player","Zeal") < 13
 				or IWin:GetManaPercent("player") > 80
 			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Crusader Strike")
+	end
+end
+
+function IWin:DevotionAura()
+	if IWin:IsSpellLearnt("Devotion Aura")
+		and IWin_CombatVar["queueGCD"]
+		and not IWin:IsAuraActive()
+		and IWin.hasPallyPower
+		and PallyPower_AuraAssignments[UnitName("player")] == 0 then
+			IWin_CombatVar["queueGCD"] = false
+			Cast("Devotion Aura")
 	end
 end
 
 function IWin:DivineShield()
 	if IWin:IsSpellLearnt("Divine Shield")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Divine Shield")
 		and UnitAffectingCombat("player") then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Divine Shield")
 	end
 end
 
-function IWin:Exorcism()
+function IWin:Exorcism(manaPercent)
 	if IWin:IsSpellLearnt("Exorcism")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Exorcism")
-		and IWin:GetManaPercent("player") > 30
+		and IWin:GetManaPercent("player") > manaPercent
 		and (
 				UnitCreatureType("target") == "Undead"
 				or UnitCreatureType("target") == "Demon"
 			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Exorcism")
 	end
 end
 
-function IWin:ExorcismRanged()
+function IWin:ExorcismRanged(manaPercent)
 	if IWin:IsSpellLearnt("Exorcism")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Exorcism")
-		and IWin:GetManaPercent("player") > 30
+		and IWin:GetManaPercent("player") > manaPercent
 		and (
 				UnitCreatureType("target") == "Undead"
 				or UnitCreatureType("target") == "Demon"
 			)
 		and not IWin:IsInRange("Holy Strike") then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Exorcism")
+	end
+end
+
+function IWin:FireResistanceAura()
+	if IWin:IsSpellLearnt("Fire Resistance Aura")
+		and IWin_CombatVar["queueGCD"]
+		and not IWin:IsAuraActive()
+		and IWin.hasPallyPower
+		and PallyPower_AuraAssignments[UnitName("player")] == 5 then
+			IWin_CombatVar["queueGCD"] = false
+			Cast("Fire Resistance Aura")
+	end
+end
+
+function IWin:FrostResistanceAura()
+	if IWin:IsSpellLearnt("Frost Resistance Aura")
+		and IWin_CombatVar["queueGCD"]
+		and not IWin:IsAuraActive()
+		and IWin.hasPallyPower
+		and PallyPower_AuraAssignments[UnitName("player")] == 4 then
+			IWin_CombatVar["queueGCD"] = false
+			Cast("Frost Resistance Aura")
 	end
 end
 
 function IWin:HammerOfJustice()
 	if IWin:IsSpellLearnt("Hammer of Justice")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Hammer of Justice") then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Hammer of Justice")
 	end
 end
 
-function IWin:HammerOfWrath()
+function IWin:HammerOfWrath(manaPercent)
 	if IWin:IsSpellLearnt("Hammer of Wrath")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Hammer of Wrath")
 		and (
 				(
 					IWin:IsElite()
 					and not IWin:IsTanking()
-					and IWin:GetManaPercent("player") > 30
+					and IWin:GetManaPercent("player") > manaPercent
 				)
 				or UnitIsPVP("target")
 			)
@@ -585,103 +678,139 @@ function IWin:HammerOfWrath()
 				or st_timer > UnitAttackSpeed("player") * 0.9
 				or st_timer > 1
 			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Hammer of Wrath")
 	end
 end
 
 function IWin:HandOfFreedom()
 	if IWin:IsSpellLearnt("Hand of Freedom")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Hand of Freedom")
 		and not HasFullControl() then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Hand of Freedom")
 	end
 end
 
 function IWin:HandOfReckoning()
 	if IWin:IsSpellLearnt("Hand of Reckoning")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsTanking()
 		and not IWin:IsOnCooldown("Hand of Reckoning")
 		and not IWin:IsTaunted() then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Hand of Reckoning")
 	end
 end
 
-function IWin:HolyShield()
+function IWin:HolyShield(manaPercent)
 	if IWin:IsSpellLearnt("Holy Shield")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Holy Shield")
+		and IWin:GetManaPercent("player") > manaPercent
 		and IWin:IsShieldEquipped()
 		and (
 				not UnitAffectingCombat("target")
 				or IWin:IsTanking()
 			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Holy Shield")
 	end
 end
 
-function IWin:HolyShock()
+function IWin:HolyShock(manaPercent)
 	if IWin:IsSpellLearnt("Holy Shock")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Holy Shock")
+		and IWin:IsTanking()
 		and IWin:GetHealthPercent("player") < 80
-		and IWin:GetManaPercent("player") > 25 then
+		and IWin:GetManaPercent("player") > manaPercent then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Holy Shock","player")
+	end
+end
+
+function IWin:HolyShockPull(manaPercent)
+	if IWin:IsSpellLearnt("Holy Shock")
+		and IWin_CombatVar["queueGCD"]
+		and not IWin:IsOnCooldown("Holy Shock")
+		and IWin:GetManaPercent("player") > manaPercent
+		and not UnitAffectingCombat("target") then
+			IWin_CombatVar["queueGCD"] = false
+			Cast("Holy Shock")
 	end
 end
 
 function IWin:HolyStrike()
 	if IWin:IsSpellLearnt("Holy Strike")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Holy Strike") then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Holy Strike")
 	end
 end
 
 function IWin:HolyStrikeHolyMight()
 	if IWin:IsSpellLearnt("Holy Strike")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Holy Strike")
-		and IWin:GetBuffRemaining("player","Holy Might") < 7
+		and not IWin:IsBuffActive("player","Holy Might")
 		and IWin:GetTalentRank(3 ,15) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Holy Strike")
 	end
 end
 
 function IWin:HolyWrath()
 	if IWin:IsSpellLearnt("Holy Wrath")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Holy Wrath")
 		and not IWin:IsTanking()
 		and (
 				UnitCreatureType("target") == "Undead"
 				or UnitCreatureType("target") == "Demon"
 			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Holy Wrath")
 	end
 end
 
-function IWin:Judgement()
+function IWin:Judgement(manaPercent)
 	if IWin:IsSpellLearnt("Judgement")
 		and not IWin:IsOnCooldown("Judgement")
 		and IWin:IsSealActive()
-		and not IWin:IsJudgementOverwrite("Judgement of Wisdom","Seal of Wisdom")
-		and not IWin:IsJudgementOverwrite("Judgement of Light","Seal of Light")
-		and not IWin:IsJudgementOverwrite("Judgement of the Crusader","Seal of the Crusader")
-		and not IWin:IsJudgementOverwrite("Judgement of Justice","Seal of Justice")
-		and (
-				IWin:GetTimeToDie() > 10
-				or IWin:IsBuffActive("player","Seal of Righteousness")
-				or IWin:IsBuffActive("player","Seal of Command")
-			)
 		and (
 				(
-					not IWin:IsBuffActive("player","Seal of Righteousness")
-					and not IWin:IsBuffActive("player","Seal of Command")
+					IWin:GetTalentRank(1, 3) == 3
+					and not IWin:IsBuffStack("player","Holy Judgement",1)
 				)
-				or IWin:GetBuffRemaining("player","Seal of Righteousness") < 5
-				or IWin:GetBuffRemaining("player","Seal of Command") < 5
-				or IWin:GetManaPercent("player") > 50
+				or (
+					not IWin:IsJudgementOverwrite("Judgement of Wisdom","Seal of Wisdom")
+					and not IWin:IsJudgementOverwrite("Judgement of Light","Seal of Light")
+					and not IWin:IsJudgementOverwrite("Judgement of the Crusader","Seal of the Crusader")
+					and not IWin:IsJudgementOverwrite("Judgement of Justice","Seal of Justice")
+					and (
+							IWin:GetTimeToDie() > 10
+							or IWin:IsBuffActive("player","Seal of Righteousness")
+							or IWin:IsBuffActive("player","Seal of Command")
+						)
+					and (
+							(
+								not IWin:IsBuffActive("player","Seal of Righteousness")
+								and not IWin:IsBuffActive("player","Seal of Command")
+							)
+							or IWin:GetBuffRemaining("player","Seal of Righteousness") < 5
+							or IWin:GetBuffRemaining("player","Seal of Command") < 5
+							or IWin:GetManaPercent("player") > manaPercent
+						)
+					and not (
+								IWin:IsJudgementActive()
+								and IWin:IsBuffActive("player","Seal of Light")
+								and GetNumPartyMembers() == 0
+							)
+					)
 			)
-		and not (
-					IWin:IsJudgementActive()
-					and IWin:IsBuffActive("player","Seal of Light")
-					and GetNumPartyMembers() == 0
-				)
 		and not IWin:IsGCDActive() then
 			Cast("Judgement")
 	end
@@ -716,8 +845,10 @@ end
 
 function IWin:Purify()
 	if IWin:IsSpellLearnt("Purify")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Purify")
 		and not HasFullControl() then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Purify")
 	end
 end
@@ -725,20 +856,61 @@ end
 function IWin:Repentance()
 	if IWin:IsSpellLearnt("Repentance")
 		and not IWin:IsOnCooldown("Repentance") then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Repentance")
 	end
 end
 
 function IWin:RepentanceRaid()
 	if IWin:IsSpellLearnt("Repentance")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Repentance")
 		and UnitInRaid("player") then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Repentance")
 	end
 end
 
-function IWin:SealOfCommand()
+function IWin:RetributionAura()
+	if IWin:IsSpellLearnt("Retribution Aura")
+		and IWin_CombatVar["queueGCD"]
+		and not IWin:IsAuraActive()
+		and (
+				(
+					IWin.hasPallyPower
+					and PallyPower_AuraAssignments[UnitName("player")] == 1
+				)
+				or not IWin.hasPallyPower
+			) then
+				IWin_CombatVar["queueGCD"] = false
+				Cast("Retribution Aura")
+	end
+end
+
+function IWin:RighteousFury()
+	if IWin:IsSpellLearnt("Righteous Fury")
+		and IWin_CombatVar["queueGCD"]
+		and IWin:IsBuffStack("player","Righteous Fury",0) then
+			IWin_CombatVar["queueGCD"] = false
+			Cast("Righteous Fury")
+	end
+end
+
+function IWin:SanctityAura()
+	if IWin:IsSpellLearnt("Sanctity Aura")
+		and IWin_CombatVar["queueGCD"]
+		and not IWin:IsAuraActive()
+		and IWin.hasPallyPower
+		and PallyPower_AuraAssignments[UnitName("player")] == 6 then
+			IWin_CombatVar["queueGCD"] = false
+			Cast("Sanctity Aura")
+	end
+end
+
+function IWin:SealOfCommand(manaPercent)
 	if IWin:IsSpellLearnt("Seal of Command")
+		and IWin_CombatVar["queueGCD"]
+		and IWin:GetManaPercent("player") > manaPercent
 		and (
 				(
 					IWin_CombatVar["weaponAttackSpeed"] > 3.49
@@ -749,21 +921,25 @@ function IWin:SealOfCommand()
 		and (
 				not IWin:IsSealActive()
 				or IWin:GetManaPercent("player") > 95
-			) then 
+			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Seal of Command")
 	end
 end
 
 function IWin:SealOfJustice()
 	if IWin:IsSpellLearnt("Seal of Justice")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsBuffActive("target", "Judgement of Justice")
-		and not IWin:IsBuffActive("player", "Seal of Justice") then 
+		and not IWin:IsBuffActive("player", "Seal of Justice") then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Seal of Justice")
 	end
 end
 
 function IWin:SealOfLightElite()
 	if IWin:IsSpellLearnt("Seal of Light")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsBuffActive("player","Seal of Light")
 		and not IWin:IsBuffActive("target","Judgement of Light")
 		and (
@@ -780,22 +956,26 @@ function IWin:SealOfLightElite()
 				not IWin.hasPallyPower
 				and IWin_Paladin["judgement"] == "light"
 			)) then
+				IWin_CombatVar["queueGCD"] = false
 				Cast("Seal of Light")
 	end
 end
 
 function IWin:SealOfLightSolo()
 	if IWin:IsSpellLearnt("Seal of Light")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsSealActive()
 		and GetNumPartyMembers() == 0
-		and IWin:IsBuffActive("target","Judgement of Wisdom") then 
+		and IWin:IsBuffActive("target","Judgement of Wisdom") then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Seal of Light")
 	end
 end
 
-function IWin:SealOfRighteousness()
+function IWin:SealOfRighteousness(manaPercent)
 	if IWin:IsSpellLearnt("Seal of Righteousness")
-		and IWin:GetManaPercent("player") > 15
+		and IWin_CombatVar["queueGCD"]
+		and IWin:GetManaPercent("player") > manaPercent
 		and (
 				not IWin:IsSealActive()
 				or (
@@ -803,13 +983,15 @@ function IWin:SealOfRighteousness()
 						and not IWin:IsBuffActive("player","Seal of Righteousness")
 						and IWin:IsBuffActive("target","Judgement of Wisdom")
 					)
-			) then 
+			) then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Seal of Righteousness")
 	end
 end
 
 function IWin:SealOfTheCrusaderElite()
 	if IWin:IsSpellLearnt("Seal of the Crusader")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsBuffActive("player","Seal of the Crusader")
 		and not IWin:IsBuffActive("target","Judgement of the Crusader")
 		and (
@@ -826,12 +1008,14 @@ function IWin:SealOfTheCrusaderElite()
 				not IWin.hasPallyPower
 				and IWin_Paladin["judgement"] == "crusader"
 			)) then
+				IWin_CombatVar["queueGCD"] = false
 				Cast("Seal of the Crusader")
 	end
 end
 
 function IWin:SealOfWisdom()
 	if IWin:IsSpellLearnt("Seal of Wisdom")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsSealActive()
 		and (
 				IWin:GetManaPercent("player") < 30
@@ -846,13 +1030,15 @@ function IWin:SealOfWisdom()
 						and not IWin:IsElite()
 						and not UnitAffectingCombat("player")
 					)
-			) then 
-			Cast("Seal of Wisdom")
+			) then
+				IWin_CombatVar["queueGCD"] = false
+				Cast("Seal of Wisdom")
 	end
 end
 
 function IWin:SealOfWisdomElite()
 	if IWin:IsSpellLearnt("Seal of Wisdom")
+		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsBuffActive("player","Seal of Wisdom")
 		and not IWin:IsBuffActive("target","Judgement of Wisdom")
 		and (
@@ -869,14 +1055,28 @@ function IWin:SealOfWisdomElite()
 				not IWin.hasPallyPower
 				and IWin_Paladin["judgement"] == "wisdom"
 			)) then
+				IWin_CombatVar["queueGCD"] = false
 				Cast("Seal of Wisdom")
 	end
 end
 
 function IWin:SealOfWisdomEco()
 	if IWin:IsSpellLearnt("Seal of Wisdom")
-		and not IWin:IsSealActive() then 
+		and IWin_CombatVar["queueGCD"]
+		and not IWin:IsSealActive() then
+			IWin_CombatVar["queueGCD"] = false
 			Cast("Seal of Wisdom")
+	end
+end
+
+function IWin:ShadowResistanceAura()
+	if IWin:IsSpellLearnt("Shadow Resistance Aura")
+		and IWin_CombatVar["queueGCD"]
+		and not IWin:IsAuraActive()
+		and IWin.hasPallyPower
+		and PallyPower_AuraAssignments[UnitName("player")] == 3 then
+			IWin_CombatVar["queueGCD"] = false
+			Cast("Shadow Resistance Aura")
 	end
 end
 
@@ -937,8 +1137,16 @@ end
 ---- idps button ----
 SLASH_IDPS1 = '/idps'
 function SlashCmdList.IDPS()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
+	IWin:DevotionAura()
+	IWin:RetributionAura()
+	IWin:ConcentrationAura()
+	IWin:ShadowResistanceAura()
+	IWin:FrostResistanceAura()
+	IWin:FireResistanceAura()
+	IWin:SanctityAura()
 	IWin:BlessingOfSanctuary()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfMight()
@@ -949,44 +1157,53 @@ function SlashCmdList.IDPS()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
 	IWin:SealOfTheCrusaderElite()
-	IWin:SealOfCommand()
-	IWin:SealOfRighteousness()
-	IWin:HammerOfWrath()
-	IWin:ExorcismRanged()
+	IWin:SealOfCommand(15)
+	IWin:SealOfRighteousness(15)
+	IWin:HammerOfWrath(30)
+	IWin:ExorcismRanged(30)
 	IWin:JudgementRanged()
 	IWin:HolyStrikeHolyMight()
-	IWin:CrusaderStrike()
+	IWin:CrusaderStrike(15)
 	IWin:HolyStrike()
-	IWin:Exorcism()
-	IWin:Judgement()
+	IWin:Exorcism(30)
+	IWin:Judgement(50)
 	IWin:RepentanceRaid()
+	IWin:Consecration(90)
 	IWin:StartAttack()
 end
 
 ---- icleave button ----
 SLASH_ICLEAVE1 = '/icleave'
 function SlashCmdList.ICLEAVE()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
+	IWin:DevotionAura()
+	IWin:RetributionAura()
+	IWin:ConcentrationAura()
+	IWin:ShadowResistanceAura()
+	IWin:FrostResistanceAura()
+	IWin:FireResistanceAura()
+	IWin:SanctityAura()
 	IWin:BlessingOfSanctuary()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfMight()
 	IWin:BlessingOfKings()
 	IWin:BlessingOfLight()
 	IWin:BlessingOfSalvation()
-	IWin:HolyShield()
+	IWin:HolyShield(5)
 	IWin:SealOfWisdom()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
 	IWin:SealOfTheCrusaderElite()
-	IWin:SealOfCommand()
-	IWin:SealOfRighteousness()
-	IWin:Consecration()
+	IWin:SealOfCommand(15)
+	IWin:SealOfRighteousness(15)
+	IWin:Consecration(50)
 	IWin:HolyWrath()
 	IWin:JudgementRanged()
-	IWin:CrusaderStrike()
+	IWin:CrusaderStrike(15)
 	IWin:HolyStrike()
-	IWin:Judgement()
+	IWin:Judgement(50)
 	IWin:RepentanceRaid()
 	IWin:StartAttack()
 end
@@ -994,29 +1211,39 @@ end
 ---- itank button ----
 SLASH_ITANK1 = '/itank'
 function SlashCmdList.ITANK()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
+	IWin:CancelSalvation()
+	--IWin:RighteousFury()
+	IWin:DevotionAura()
+	IWin:RetributionAura()
+	IWin:ConcentrationAura()
+	IWin:ShadowResistanceAura()
+	IWin:FrostResistanceAura()
+	IWin:FireResistanceAura()
+	IWin:SanctityAura()
 	IWin:BlessingOfSanctuary()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfMight()
 	IWin:BlessingOfKings()
 	IWin:BlessingOfLight()
 	IWin:BlessingOfSalvation()
-	IWin:HolyShield()
+	IWin:HolyShockPull(20)
+	IWin:HolyShield(5)
 	IWin:SealOfWisdom()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
 	IWin:SealOfTheCrusaderElite()
-	IWin:SealOfLightSolo()
-	IWin:SealOfCommand()
-	IWin:SealOfRighteousness()
-	IWin:ExorcismRanged()
+	IWin:SealOfCommand(15)
+	IWin:SealOfRighteousness(15)
+	IWin:ExorcismRanged(30)
 	IWin:JudgementRanged()
 	IWin:HolyStrike()
-	IWin:Consecration()
-	IWin:Exorcism()
-	IWin:Judgement()
-	IWin:HolyShock()
+	IWin:Exorcism(30)
+	IWin:Judgement(50)
+	IWin:HolyShock(15)
+	IWin:Consecration(70)
 	IWin:RepentanceRaid()
 	IWin:StartAttack()
 end
@@ -1024,27 +1251,38 @@ end
 ---- ihodor button ----
 SLASH_IHODOR1 = '/ihodor'
 function SlashCmdList.IHODOR()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
+	IWin:CancelSalvation()
+	--IWin:RighteousFury()
+	IWin:DevotionAura()
+	IWin:RetributionAura()
+	IWin:ConcentrationAura()
+	IWin:ShadowResistanceAura()
+	IWin:FrostResistanceAura()
+	IWin:FireResistanceAura()
+	IWin:SanctityAura()
 	IWin:BlessingOfSanctuary()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfMight()
 	IWin:BlessingOfKings()
 	IWin:BlessingOfLight()
 	IWin:BlessingOfSalvation()
-	IWin:Consecration()
-	IWin:HolyShield()
-	IWin:HolyShock()
+	IWin:Consecration(25)
+	IWin:HolyShockPull(20)
+	IWin:HolyShield(5)
+	IWin:HolyShock(15)
 	IWin:SealOfWisdom()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
 	IWin:SealOfTheCrusaderElite()
 	IWin:SealOfWisdomEco()
-	IWin:ExorcismRanged()
+	IWin:ExorcismRanged(30)
 	IWin:JudgementRanged()
 	IWin:HolyStrike()
-	IWin:Exorcism()
-	IWin:Judgement()
+	IWin:Exorcism(30)
+	IWin:Judgement(50)
 	IWin:RepentanceRaid()
 	IWin:StartAttack()
 end
@@ -1052,8 +1290,15 @@ end
 ---- ieco button ----
 SLASH_IECO1 = '/ieco'
 function SlashCmdList.IECO()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:TargetEnemy()
-	IWin:MarkSkull()
+	IWin:DevotionAura()
+	IWin:RetributionAura()
+	IWin:ConcentrationAura()
+	IWin:ShadowResistanceAura()
+	IWin:FrostResistanceAura()
+	IWin:FireResistanceAura()
+	IWin:SanctityAura()
 	IWin:BlessingOfSanctuary()
 	IWin:BlessingOfWisdom()
 	IWin:BlessingOfMight()
@@ -1066,28 +1311,31 @@ function SlashCmdList.IECO()
 	IWin:SealOfTheCrusaderElite()
 	IWin:SealOfWisdomEco()
 	IWin:JudgementRanged()
-	IWin:HolyShield()
+	IWin:HolyShield(5)
 	IWin:HolyStrike()
-	IWin:Judgement()
+	IWin:Judgement(50)
+	IWin:HolyShock(15)
 	IWin:StartAttack()
 end
 
 ---- ijudge button ----
 SLASH_IJUDGE1 = '/ijudge'
 function SlashCmdList.IJUDGE()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:TargetEnemy()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
 	IWin:SealOfTheCrusaderElite()
-	IWin:SealOfCommand()
-	IWin:SealOfRighteousness()
-	IWin:Judgement()
+	IWin:SealOfCommand(15)
+	IWin:SealOfRighteousness(15)
+	IWin:Judgement(50)
 	IWin:StartAttack()
 end
 
 ---- ichase button ----
 SLASH_ICHASE1 = '/ichase'
 function SlashCmdList.ICHASE()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:TargetEnemy()
 	IWin:HandOfFreedom()
 	IWin:SealOfJustice()
@@ -1100,6 +1348,7 @@ end
 ---- istun button ----
 SLASH_ISTUN1 = '/istun'
 function SlashCmdList.ISTUN()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:TargetEnemy()
 	IWin:HammerOfJustice()
 	IWin:StartAttack()
@@ -1109,6 +1358,7 @@ end
 ---- itaunt button ----
 SLASH_ITAUNT1 = '/itaunt'
 function SlashCmdList.ITAUNT()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:TargetEnemy()
 	IWin:HandOfReckoning()
 	IWin:StartAttack()
@@ -1117,6 +1367,7 @@ end
 ---- ibubblehearth button ----
 SLASH_IBUBBLEHEARTH1 = '/ibubblehearth'
 function SlashCmdList.IBUBBLEHEARTH()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:DivineShield()
 	IWin:UseItem("Hearthstone")
 end
@@ -1124,5 +1375,6 @@ end
 ---- ihydrate button ----
 SLASH_IHYDRATE1 = '/ihydrate'
 function SlashCmdList.IHYDRATE()
+	IWin_CombatVar["queueGCD"] = true
 	IWin:UseDrinkItem()
 end
