@@ -2,7 +2,7 @@
 
 Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on your action bars. Enjoy!
 
-Discord: Agamemnoth#5566
+Author: Agamemnoth (discord)
 
 ## Commands
 
@@ -20,13 +20,19 @@ Discord: Agamemnoth#5566
 
 ## Setup commands
 
-    /iwin                                    Current setup
-    /iwin judgement <judgementName>          Setup for Judgement on elites and worldbosses
-    /iwin soc <socOption>                    Setup for Seal of Command
+    /iwin                                   Current setup
+    /iwin judgement <judgementName>         Setup for Judgement on elites and worldbosses
+    /iwin wisdom <classification>           Setup for Seal of Wisdom target classification
+    /iwin crusader <classification>         Setup for Seal of the Crusader target classification
+    /iwin light <classification>            Setup for Seal of Light target classification
+    /iwin justice <classification>          Setup for Seal of Justice target classification
+    /iwin soc <socOption>                   Setup for Seal of Command
 
-judgementName possible values: wisdom, light, crusader, off.
+judgementName possible values: wisdom, light, crusader, justice, off.
 
 socOption possible values: auto, on, off.
+
+classification possible values: elite, boss.
 
 Example: /iwin judgement wisdom
 => Will setup wisdom as the default judgement.
@@ -45,4 +51,3 @@ You need one of the following addons:
 
 Optionnal Addons:
 * [PallyPowerTW](https://github.com/ivanovlk/PallyPowerTW/), An addon for paladin blessings, auras and judgements assignements.
-* [SP_SwingTimer](https://github.com/Profiler781/SP_SwingTimer), An auto attack swing timer. Used for Hammer of Wrath.
