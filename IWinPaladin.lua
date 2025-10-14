@@ -305,7 +305,7 @@ IWin_UnitClassification = {
 
 function IWin:IsTrainingDummy()
 	local name = UnitName("target")
-	if string.find(name,"Training Dummy") then
+	if name and string.find(name,"Training Dummy") then
 		return true
 	end
 	return false
