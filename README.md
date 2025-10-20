@@ -12,7 +12,6 @@ Author: Agamemnoth (discord)
     /ihodor         Multi target Prot rotation
     /ieco           Mana regeneration rotation
     /ijudge         Seal and Judgement only
-    /ichase         Stick to your target with Judgement of Justice and Hand of Freedom
     /istun          Stun with Hammer of Justice or Repentance
     /itaunt         Hand of Reckoning if the target is not under another taunt effect
     /ibubblehearth  Divine Shield and Hearthstone. Shame!
@@ -51,3 +50,4 @@ You need one of the following addons:
 
 Optionnal Addons:
 * [PallyPowerTW](https://github.com/ivanovlk/PallyPowerTW/), An addon for paladin blessings, auras and judgements assignements.
+* [LibramSwap](https://github.com/Profiler781/Libramswap), An addon to automatically swap librams based on cast.

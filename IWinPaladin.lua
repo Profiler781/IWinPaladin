@@ -15,7 +15,7 @@ IWin_CombatVar = {
 	["weaponAttackSpeed"] = 0,
 	["queueGCD"] = true,
 }
-local Cast = CastSpellByName
+Cast = CastSpellByName
 IWin.hasPallyPower = PallyPower_SealAssignments and true or false
 local GCD = 1.5
 
