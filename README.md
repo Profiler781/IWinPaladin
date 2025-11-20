@@ -1,5 +1,9 @@
 # IWinPaladin v1.3
 
+## IWinPaladin has been integrated into IWinEnhanced. Only IWinEnhanced will receive updates.
+
+[IWinEnhanced](https://github.com/Profiler781/IWinEnhanced/)
+
 Smart macros for Turtle Paladins v1.18.0. Make macros with commands. Put them on your action bars. Enjoy!
 
 Author: Agamemnoth (discord)
@@ -40,13 +44,12 @@ Example: /iwin judgement wisdom
 
 Mandatory Mods:
 * [SuperWoW](https://github.com/balakethelock/SuperWoW/), A mod made for fixing client bugs and expanding the lua-based API used by user interface addons. Used for debuff tracking.
-
-Optionnal Mods:
 * [Nampower](https://github.com/pepopo978/nampower/), A mod made to dramatically increase cast efficiency on the 1.12.1 client. Used for range checks.
 
-You need one of the following addons:
-* [pfUI](https://shagu.org/pfUI/), A full UI replacement.
-* [ShaguTweaks](https://shagu.org/ShaguTweaks/), A non-intrusive quality of life addon.
+You need one of the following addons, used for debuff tracking:
+* [SuperCleveRoidMacros](https://github.com/jrc13245/SuperCleveRoidMacros/), Recommanded, Advanced macro conditions and syntax.
+* [pfUI](https://github.com/shagu/pfUI/), A full UI replacement.
+* [ShaguTweaks](https://github.com/shagu/ShaguTweaks/), A non-intrusive quality of life addon.
 
 Optionnal Addons:
 * [PallyPowerTW](https://github.com/ivanovlk/PallyPowerTW/), An addon for paladin blessings, auras and judgements assignements.

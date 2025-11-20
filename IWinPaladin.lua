@@ -10,19 +10,28 @@ if UnitClass("player") ~= "Paladin" then return end
 ---- Loading ----
 IWin = CreateFrame("frame",nil,UIParent)
 IWin.t = CreateFrame("GameTooltip", "IWin_T", UIParent, "GameTooltipTemplate")
+IWin_T:SetOwner(WorldFrame, "ANCHOR_NONE")
 IWin_CombatVar = {
 	["gcd"] = 0,
 	["weaponAttackSpeed"] = 0,
 	["queueGCD"] = true,
 }
+IWin_Target = {
+	["trainingDummy"] = false,
+	["whitelistBoss"] = false,
+	["elite"] = false,
+	["boss"] = false,
+}
 Cast = CastSpellByName
 IWin.hasPallyPower = PallyPower_SealAssignments and true or false
 local GCD = 1.5
+local IWinMigrationMessage = true
 
 ---- Event Register ----
 IWin:RegisterEvent("ACTIONBAR_UPDATE_STATE")
 IWin:RegisterEvent("ADDON_LOADED")
 IWin:RegisterEvent("UNIT_INVENTORY_CHANGED")
+IWin:RegisterEvent("PLAYER_TARGET_CHANGED")
 IWin:SetScript("OnEvent", function()
 	if event == "ADDON_LOADED" and arg1 == "IWinPaladin" then
 		DEFAULT_CHAT_FRAME:AddMessage("|cff0066ff IWinPaladin system loaded.|r")
@@ -37,13 +46,23 @@ IWin:SetScript("OnEvent", function()
 		if IWin_Paladin["playerToNPCHealthRatio"] == nil then IWin_Paladin["playerToNPCHealthRatio"] = 0.75 end
 		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player")
 		IWin.hasSuperwow = SetAutoloot and true or false
-		--IWin:UnregisterEvent("ADDON_LOADED")
 	elseif event == "ADDON_LOADED" and arg1 == "PallyPowerTW" then
 		IWin.hasPallyPower = PallyPower_SealAssignments and true or false
+	elseif event == "ADDON_LOADED" and (arg1 == "SuperCleveRoidMacros" or arg1 == "pfUI" or arg1 == "ShaguTweaks" or arg1 == "IWinPaladin") then
+		IWin.libdebuff = CleveRoids and CleveRoids.libdebuff-- or pfUI and pfUI.api and pfUI.api.libdebuff or ShaguTweaks and ShaguTweaks.libdebuff
 	elseif event == "ACTIONBAR_UPDATE_STATE" and arg1 == nil then
 		IWin_CombatVar["gcd"] = GetTime()
 	elseif event == "UNIT_INVENTORY_CHANGED" and arg1 == "player" then
+		if not IWin.libdebuff then
+			IWin.libdebuff = CleveRoids and CleveRoids.libdebuff-- or pfUI and pfUI.api and pfUI.api.libdebuff or ShaguTweaks and ShaguTweaks.libdebuff
+	    	if not IWin.libdebuff then return 0 end
+		end
 		IWin_CombatVar["weaponAttackSpeed"] = UnitAttackSpeed("player") * (1 + IWin:GetBuffStack("player","Zeal") * 0.05)
+	elseif event == "PLAYER_TARGET_CHANGED" or (event == "ADDON_LOADED" and arg1 == "IWinPaladin") then
+		IWin:SetTrainingDummy()
+		IWin:SetWhitelistBoss()
+		IWin:SetElite()
+		IWin:SetBoss()
 	end
 end)
 
@@ -94,45 +113,26 @@ end
 
 ---- Functions ----
 function IWin:GetBuffIndex(unit, spell)
-	if unit == "player" then
-		if not IWin.hasSuperwow then
-	    	DEFAULT_CHAT_FRAME:AddMessage("|cFF00FFFFbalakethelock's SuperWoW|r required:")
-	        DEFAULT_CHAT_FRAME:AddMessage("https://github.com/balakethelock/SuperWoW")
-	    	return 0
+	local index = 1
+	while UnitBuff(unit, index) do
+		IWin_T:ClearLines()
+		IWin_T:SetUnitBuff(unit, index)
+		local tooltipText = IWin_TTextLeft1:GetText()
+		if spell and tooltipText and string.find(tooltipText, spell) then
+			return index
 		end
-	    local index = 0
-	    while true do
-	        spellID = GetPlayerBuffID(index)
-	        if not spellID then break end
-	        if spell == SpellInfo(spellID) then
-	        	return index
-	        end
-	        index = index + 1
-	    end
-	else
-		local index = 1
-		while UnitBuff(unit, index) do
-			IWin_T:SetOwner(WorldFrame, "ANCHOR_NONE")
-			IWin_T:ClearLines()
-			IWin_T:SetUnitBuff(unit, index)
-			local buffName = IWin_TTextLeft1:GetText()
-			if buffName == spell then
-				return index
-			end
-			index = index + 1
-		end
+		index = index + 1
 	end
 	return nil
 end
 
 function IWin:GetDebuffIndex(unit, spell)
-	index = 1
+	local index = 1
 	while UnitDebuff(unit, index) do
-		IWin_T:SetOwner(WorldFrame, "ANCHOR_NONE")
 		IWin_T:ClearLines()
 		IWin_T:SetUnitDebuff(unit, index)
-		local buffName = IWin_TTextLeft1:GetText()
-		if buffName == spell then 
+		local tooltipText = IWin_TTextLeft1:GetText()
+		if spell and tooltipText and string.find(tooltipText, spell) then 
 			return index
 		end
 		index = index + 1
@@ -140,51 +140,75 @@ function IWin:GetDebuffIndex(unit, spell)
 	return nil
 end
 
-function IWin:GetBuffStack(unit, spell)
+function IWin:GetBuffRemaining(unit, spell, owner)
+	-- Debuff scan
+	for index = 1, 16 do
+	    local effect, _, texture, stacks, dtype, duration, timeleft, caster = IWin.libdebuff:UnitDebuff(unit, index)
+	    if not effect then break end
+	    if effect and effect == spell and ((not owner) or (caster == owner)) then
+	        return timeleft
+	    end
+	end
+	-- Buff scan only for player
+	if unit == "player" then
+		for index = 0, 32 do
+	        spellID = GetPlayerBuffID(index)
+	        if not spellID then break end
+	        if spell == SpellInfo(spellID) then
+	        	local timeLeft = GetPlayerBuffTimeLeft(index)
+	        	if timeLeft ~= 0 then
+	        		return timeLeft
+	        	else
+	        		return 9999
+	        	end
+	        end
+	    end
+    end
+    -- Debuff scan overflow as buff
+	for index = 1, 32 do
+	    local effect, _, texture, stacks, dtype, duration, timeleft, caster = IWin.libdebuff:UnitBuff(unit, index)
+	    if not effect then break end
+	    if effect == spell and ((not owner) or (caster == owner)) then
+	        return timeleft
+	    end
+	end
+	-- Not found
+	return 0
+end
+
+function IWin:GetBuffStack(unit, spell, owner)
+	-- Debuff scan
+	for index = 1, 16 do
+	    local effect, _, texture, stacks, dtype, duration, timeleft, caster = IWin.libdebuff:UnitDebuff(unit, index)
+	    if not effect then break end
+	    if effect == spell and ((not owner) or (caster == owner)) then
+	        return stacks
+	    end
+	end
+	-- Buff scan
 	local index = IWin:GetBuffIndex(unit, spell)
 	if index then
 		local _, stack = UnitBuff(unit, index)
 		return stack or 0
 	end
-	local index = IWin:GetDebuffIndex(unit, spell)
-	if index then
-		local _, stack = UnitDebuff(unit, index)
-		return stack or 0
+	-- Debuff scan overflow as buff
+	for index = 1, 32 do
+	    local effect, _, texture, stacks, dtype, duration, timeleft, caster = IWin.libdebuff:UnitBuff(unit, index)
+	    if not effect then break end
+	    if effect == spell and ((not owner) or (caster == owner)) then
+	        return stacks
+	    end
 	end
+	-- Not found
 	return 0
 end
 
-function IWin:IsBuffStack(unit, spell, stack)
-	return IWin:GetBuffStack(unit, spell) == stack
+function IWin:IsBuffStack(unit, spell, stack, owner)
+	return IWin:GetBuffStack(unit, spell, owner) == stack
 end
 
-function IWin:IsBuffActive(unit, spell)
-	return IWin:GetBuffRemaining(unit, spell) ~= 0
-end
-
-function IWin:GetBuffRemaining(unit, spell)
-	if unit == "player" then
-		local index = IWin:GetBuffIndex(unit, spell)
-		if index then
-			return GetPlayerBuffTimeLeft(index)
-		end
-		local index = IWin:GetDebuffIndex(unit, spell)
-		if index then
-			return GetPlayerBuffTimeLeft(index)
-		end
-	elseif unit == "target" then
-		local libdebuff = pfUI and pfUI.api and pfUI.api.libdebuff or ShaguTweaks and ShaguTweaks.libdebuff
-		if not libdebuff then
-	    	DEFAULT_CHAT_FRAME:AddMessage("Either pfUI or ShaguTweaks required")
-	    	return 0
-		end
-		local index = IWin:GetDebuffIndex(unit, spell)
-		if index then
-			local _, _, _, _, _, _, timeleft = libdebuff:UnitDebuff("target", index)
-			return timeleft
-		end
-	end
-	return 0
+function IWin:IsBuffActive(unit, spell, owner)
+	return IWin:GetBuffRemaining(unit, spell, owner) ~= 0
 end
 
 function IWin:GetCooldownRemaining(spell)
@@ -303,29 +327,86 @@ IWin_UnitClassification = {
 	["trivial"] = false,
 }
 
-function IWin:IsTrainingDummy()
+function IWin:GetTrainingDummy()
 	local name = UnitName("target")
 	if name and string.find(name,"Training Dummy") then
 		return true
+	else
+		return false
+	end
+end
+
+function IWin:SetTrainingDummy()
+	IWin_Target["trainingDummy"] = IWin:GetTrainingDummy()
+end
+
+function IWin:IsTrainingDummy()
+	return IWin_Target["trainingDummy"]
+end
+
+IWin_WhitelistBoss = {
+	-- Molten Core
+	"Flamewaker Protector",
+	"Flamewaker Elite",
+}
+
+function IWin:GetWhitelistBoss()
+	if not UnitExists("target") then
+		return false
+	end
+	if IWin:IsTrainingDummy() then
+		return true
+	end
+	local name = UnitName("target")
+	for unit in IWin_WhitelistBoss do
+		if IWin_WhitelistBoss[unit] == name then
+			return true
+		end
 	end
 	return false
 end
 
-function IWin:IsElite()
+function IWin:SetWhitelistBoss()
+	IWin_Target["whitelistBoss"] = IWin:GetWhitelistBoss()
+end
+
+function IWin:IsWhitelistBoss()
+	return IWin_Target["whitelistBoss"]
+end
+
+function IWin:GetElite()
 	local classification = UnitClassification("target")
 	if IWin_UnitClassification[classification]
 		or IWin:IsTrainingDummy() then
 			return true
+	else
+		return false
+	end
+end
+
+function IWin:SetElite()
+	IWin_Target["elite"] = IWin:GetElite()
+end
+
+function IWin:IsElite()
+	return IWin_Target["elite"]
+end
+
+function IWin:GetBoss()
+	if UnitClassification("target") == "worldboss"
+		or IWin:IsTrainingDummy()
+		or IWin:IsWhitelistBoss() then
+			return true
 	end
 	return false
 end
 
+function IWin:SetBoss()
+	IWin_Target["boss"] = IWin:GetBoss()
+end
+
 function IWin:IsBoss()
-	if UnitClassification("target") == "worldboss"
-		or IWin:IsTrainingDummy() then
-			return true
-	end
-	return false
+	return IWin_Target["boss"]
 end
 
 function IWin:IsJudgementTarget(judgement)
@@ -428,6 +509,30 @@ function IWin:MarkSkull()
 		and GetNumPartyMembers() ~= 0 then
 			SetRaidTarget("target", 8)
 	end
+end
+
+function IWin:InitializeRotation()
+	if IWinMigrationMessage then
+		DEFAULT_CHAT_FRAME:AddMessage("|cFF00FFFFIWinPaladin|r has been integrated into |cFF00FFFF|cFF00FFFFIWinEnhanced|r. Only |cFF00FFFFIWinEnhanced|r will receive updates.")
+        DEFAULT_CHAT_FRAME:AddMessage("https://github.com/Profiler781/IWinEnhanced")
+        IWinMigrationMessage = false
+    end
+	if not IWin.hasSuperwow then
+    	DEFAULT_CHAT_FRAME:AddMessage("|cFF00FFFFbalakethelock's SuperWoW|r required:")
+        DEFAULT_CHAT_FRAME:AddMessage("https://github.com/balakethelock/SuperWoW")
+    	return 0
+	end
+	if not IWin.libdebuff then
+		IWin.libdebuff = CleveRoids and CleveRoids.libdebuff-- or pfUI and pfUI.api and pfUI.api.libdebuff or ShaguTweaks and ShaguTweaks.libdebuff
+    	if not IWin.libdebuff then
+	    	DEFAULT_CHAT_FRAME:AddMessage("|cFF00FFFFSuperCleveRoidMacros|r (recommanded) or |cFF00FFFFpfUI|r or |cFF00FFFFShaguTweaks|r required:")
+	        DEFAULT_CHAT_FRAME:AddMessage("https://github.com/jrc13245/SuperCleveRoidMacros")
+	        --DEFAULT_CHAT_FRAME:AddMessage("https://github.com/shagu/pfUI")
+	        --DEFAULT_CHAT_FRAME:AddMessage("https://github.com/shagu/ShaguTweaks")
+	    	return 0
+	    end
+	end
+	IWin_CombatVar["queueGCD"] = true
 end
 
 function IWin:CancelPlayerBuff(spell)
@@ -785,6 +890,7 @@ function IWin:HolyShockPull(manaPercent)
 		and IWin_CombatVar["queueGCD"]
 		and IWin:IsInRange("Holy Shock")
 		and not IWin:IsOnCooldown("Holy Shock")
+		and UnitExists("target")
 		and IWin:GetManaPercent("player") > manaPercent
 		and not UnitAffectingCombat("target") then
 			IWin_CombatVar["queueGCD"] = false
@@ -811,7 +917,7 @@ function IWin:HolyStrikeHolyMight(queueTime)
 				IWin:GetCooldownRemaining("Holy Strike") < queueTime
 				or not IWin:IsOnCooldown("Holy Strike")
 			)
-		and not IWin:IsBuffActive("player","Holy Might")
+		and IWin:GetBuffRemaining("player","Holy Might") < 4
 		and IWin:GetTalentRank(3 ,15) ~= 0 then
 			IWin_CombatVar["queueGCD"] = false
 			Cast("Holy Strike")
@@ -844,7 +950,7 @@ function IWin:Judgement(manaPercent,queueTime)
 		and (
 				(
 					IWin:GetTalentRank(1, 3) == 3
-					and not IWin:IsBuffStack("player","Holy Judgement",1)
+					and not IWin:IsBuffActive("player","Holy Judgement")
 					and IWin:GetManaPercent("player") > manaPercent
 				)
 				or (
@@ -917,6 +1023,7 @@ function IWin:RepentanceRaid()
 	if IWin:IsSpellLearnt("Repentance")
 		and IWin_CombatVar["queueGCD"]
 		and not IWin:IsOnCooldown("Repentance")
+		and not IWin:IsBuffActive("player", "Repentance")
 		and UnitInRaid("player")
 		and IWin:IsElite() then
 			IWin_CombatVar["queueGCD"] = false
@@ -943,7 +1050,7 @@ end
 function IWin:RighteousFury()
 	if IWin:IsSpellLearnt("Righteous Fury")
 		and IWin_CombatVar["queueGCD"]
-		and IWin:IsBuffStack("player","Righteous Fury",0) then
+		and not IWin:IsBuffActive("player","Righteous Fury") then
 			IWin_CombatVar["queueGCD"] = false
 			Cast("Righteous Fury")
 	end
@@ -1033,6 +1140,7 @@ function IWin:SealOfRighteousness(manaPercent)
 						IWin:GetManaPercent("player") > 95
 						and not IWin:IsBuffActive("player","Seal of Righteousness")
 						and IWin:IsBuffActive("target","Judgement of Wisdom")
+						and IWin:IsBuffActive("player","Seal of Wisdom")
 					)
 			) then
 			IWin_CombatVar["queueGCD"] = false
@@ -1217,7 +1325,7 @@ end
 ---- idps button ----
 SLASH_IDPS1 = '/idps'
 function SlashCmdList.IDPS()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
 	IWin:DevotionAura()
@@ -1257,7 +1365,7 @@ end
 ---- icleave button ----
 SLASH_ICLEAVE1 = '/icleave'
 function SlashCmdList.ICLEAVE()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
 	IWin:DevotionAura()
@@ -1295,11 +1403,11 @@ end
 ---- itank button ----
 SLASH_ITANK1 = '/itank'
 function SlashCmdList.ITANK()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
 	IWin:CancelSalvation()
-	--IWin:RighteousFury()
+	IWin:RighteousFury()
 	IWin:DevotionAura()
 	IWin:RetributionAura()
 	IWin:ConcentrationAura()
@@ -1337,11 +1445,11 @@ end
 ---- ihodor button ----
 SLASH_IHODOR1 = '/ihodor'
 function SlashCmdList.IHODOR()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:TargetEnemy()
 	IWin:MarkSkull()
 	IWin:CancelSalvation()
-	--IWin:RighteousFury()
+	IWin:RighteousFury()
 	IWin:DevotionAura()
 	IWin:RetributionAura()
 	IWin:ConcentrationAura()
@@ -1378,7 +1486,7 @@ end
 ---- ieco button ----
 SLASH_IECO1 = '/ieco'
 function SlashCmdList.IECO()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:TargetEnemy()
 	IWin:DevotionAura()
 	IWin:RetributionAura()
@@ -1410,7 +1518,7 @@ end
 ---- ijudge button ----
 SLASH_IJUDGE1 = '/ijudge'
 function SlashCmdList.IJUDGE()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:TargetEnemy()
 	IWin:SealOfWisdomElite()
 	IWin:SealOfLightElite()
@@ -1425,7 +1533,7 @@ end
 ---- ichase button ----
 SLASH_ICHASE1 = '/ichase'
 function SlashCmdList.ICHASE()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:TargetEnemy()
 	IWin:HandOfFreedom()
 	IWin:SealOfJustice()
@@ -1438,7 +1546,7 @@ end
 ---- istun button ----
 SLASH_ISTUN1 = '/istun'
 function SlashCmdList.ISTUN()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:TargetEnemy()
 	IWin:HammerOfJustice()
 	IWin:StartAttack()
@@ -1448,7 +1556,7 @@ end
 ---- itaunt button ----
 SLASH_ITAUNT1 = '/itaunt'
 function SlashCmdList.ITAUNT()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:TargetEnemy()
 	IWin:HandOfReckoning()
 	IWin:StartAttack()
@@ -1457,7 +1565,7 @@ end
 ---- ibubblehearth button ----
 SLASH_IBUBBLEHEARTH1 = '/ibubblehearth'
 function SlashCmdList.IBUBBLEHEARTH()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:DivineShield()
 	IWin:UseItem("Hearthstone")
 end
@@ -1465,6 +1573,6 @@ end
 ---- ihydrate button ----
 SLASH_IHYDRATE1 = '/ihydrate'
 function SlashCmdList.IHYDRATE()
-	IWin_CombatVar["queueGCD"] = true
+	IWin:InitializeRotation()
 	IWin:UseDrinkItem()
 end
